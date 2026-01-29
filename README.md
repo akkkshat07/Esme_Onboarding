@@ -96,8 +96,8 @@ sudo bash deploy.sh
 ```
 
 ### Default Admin
-- Email: admin@esmeconsumer.in
-- Password: Esme@consumer2019
+- Email: xxxxxxxx
+- Password: xxxxxxx
    - Place `credentials.json` in the `server/` directory.
    - Create a `.env` file in `server/` with:
      - `PORT`
