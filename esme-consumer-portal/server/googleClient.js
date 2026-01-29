@@ -1,4 +1,4 @@
-// This file handles Google Interactions
+
 import { google } from 'googleapis';
 
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive'];
@@ -23,5 +23,5 @@ export const appendToSheet = async (spreadsheetId, range, values) => {
 };
 
 export const uploadFileToDrive = async (filePath, fileName, folderId) => {
-    // Implementation for Drive Upload
+
 };

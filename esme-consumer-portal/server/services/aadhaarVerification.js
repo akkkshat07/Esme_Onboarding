@@ -1,7 +1,7 @@
-// Aadhaar Verification Service (Stub)
+
 
 export const verifyAadhaar = async (aadhaarNumber) => {
-  // Stub implementation
+
   if (/^\d{12}$/.test(aadhaarNumber)) {
     return {
       success: true,
@@ -19,7 +19,7 @@ export const verifyAadhaar = async (aadhaarNumber) => {
 };
 
 export const getAadhaarData = async (aadhaarNumber, otp) => {
-  // Stub implementation
+
   return {
     success: true,
     data: {
@@ -37,12 +37,12 @@ export const validateAadhaarNumber = (aadhaarNumber) => {
 };
 
 export const storeAadhaarData = async (aadhaarNumber, data) => {
-  // Stub - in production, encrypt and store in database
+
   return { success: true };
 };
 
 export const getAadhaarDetails = async (aadhaarNumber) => {
-  // Stub - in production, retrieve from encrypted storage
+
   return {
     success: true,
     data: {

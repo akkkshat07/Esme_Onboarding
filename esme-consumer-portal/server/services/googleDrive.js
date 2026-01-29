@@ -21,7 +21,7 @@ const getDriveClient = () => {
   return google.drive({ version: 'v3', auth });
 };
 
-// Create a folder for candidate in the main folder
+
 export const createCandidateFolder = async (candidateName, position, city) => {
   try {
     const drive = getDriveClient();
@@ -31,10 +31,10 @@ export const createCandidateFolder = async (candidateName, position, city) => {
       throw new Error('GOOGLE_DRIVE_FOLDER_ID not set in .env');
     }
 
-    // Create folder name: "Name - Position - City"
+
     const folderName = `${candidateName} - ${position || 'New Joiner'} - ${city || 'Unspecified'}`;
     
-    // Check if folder already exists
+
     const existingFolders = await drive.files.list({
       q: `name='${folderName}' and '${parentFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
       fields: 'files(id, name, webViewLink)',
@@ -51,7 +51,7 @@ export const createCandidateFolder = async (candidateName, position, city) => {
       };
     }
 
-    // Create new folder
+
     const folderMetadata = {
       name: folderName,
       mimeType: 'application/vnd.google-apps.folder',
@@ -77,7 +77,7 @@ export const createCandidateFolder = async (candidateName, position, city) => {
   }
 };
 
-// Upload a file to candidate's folder
+
 export const uploadFileToDrive = async (folderId, filePath, fileName, mimeType) => {
   try {
     const drive = getDriveClient();
@@ -92,7 +92,7 @@ export const uploadFileToDrive = async (folderId, filePath, fileName, mimeType) 
       body: fs.createReadStream(filePath)
     };
 
-    // Use supportsAllDrives to work with shared folders
+
     const file = await drive.files.create({
       resource: fileMetadata,
       media: media,
@@ -102,7 +102,7 @@ export const uploadFileToDrive = async (folderId, filePath, fileName, mimeType) 
 
     console.log(`✅ Uploaded file: ${fileName} (${file.data.id})`);
 
-    // Make file viewable by anyone with link
+
     try {
       await drive.permissions.create({
         fileId: file.data.id,
@@ -128,7 +128,7 @@ export const uploadFileToDrive = async (folderId, filePath, fileName, mimeType) 
   }
 };
 
-// List all files in a candidate's folder
+
 export const listFolderFiles = async (folderId) => {
   try {
     const drive = getDriveClient();
@@ -146,7 +146,7 @@ export const listFolderFiles = async (folderId) => {
   }
 };
 
-// Delete a file from Drive
+
 export const deleteFileFromDrive = async (fileId) => {
   try {
     const drive = getDriveClient();

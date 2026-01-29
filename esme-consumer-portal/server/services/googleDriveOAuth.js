@@ -6,10 +6,10 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Token file to store the refresh token
+
 const TOKEN_PATH = path.join(__dirname, '..', 'drive_token.json');
 
-// OAuth2 client setup
+
 const getOAuth2Client = () => {
   const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
@@ -22,7 +22,7 @@ const getOAuth2Client = () => {
   return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
 };
 
-// Check if we have valid tokens
+
 export const hasValidToken = () => {
   try {
     if (fs.existsSync(TOKEN_PATH)) {
@@ -35,7 +35,7 @@ export const hasValidToken = () => {
   }
 };
 
-// Get the authorization URL for first-time setup
+
 export const getAuthUrl = () => {
   const oauth2Client = getOAuth2Client();
   const scopes = [
@@ -46,23 +46,23 @@ export const getAuthUrl = () => {
   return oauth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: scopes,
-    prompt: 'consent' // Force consent to get refresh token
+    prompt: 'consent'
   });
 };
 
-// Exchange authorization code for tokens
+
 export const handleAuthCallback = async (code) => {
   const oauth2Client = getOAuth2Client();
   const { tokens } = await oauth2Client.getToken(code);
   
-  // Save tokens to file
+
   fs.writeFileSync(TOKEN_PATH, JSON.stringify(tokens, null, 2));
   console.log('✅ Google Drive tokens saved successfully');
   
   return tokens;
 };
 
-// Get authenticated Drive client
+
 const getDriveClient = async () => {
   const oauth2Client = getOAuth2Client();
   
@@ -73,7 +73,7 @@ const getDriveClient = async () => {
   const tokens = JSON.parse(fs.readFileSync(TOKEN_PATH, 'utf-8'));
   oauth2Client.setCredentials(tokens);
 
-  // Handle token refresh
+
   oauth2Client.on('tokens', (newTokens) => {
     const updatedTokens = { ...tokens, ...newTokens };
     fs.writeFileSync(TOKEN_PATH, JSON.stringify(updatedTokens, null, 2));
@@ -83,7 +83,7 @@ const getDriveClient = async () => {
   return google.drive({ version: 'v3', auth: oauth2Client });
 };
 
-// Create a folder for candidate
+
 export const createCandidateFolder = async (candidateName, position, city) => {
   try {
     const drive = await getDriveClient();
@@ -95,7 +95,7 @@ export const createCandidateFolder = async (candidateName, position, city) => {
 
     const folderName = `${candidateName} - ${position || 'New Joiner'} - ${city || 'Unspecified'}`;
 
-    // Check if folder already exists
+
     const existingFolders = await drive.files.list({
       q: `name='${folderName}' and '${parentFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
       fields: 'files(id, name, webViewLink)'
@@ -110,7 +110,7 @@ export const createCandidateFolder = async (candidateName, position, city) => {
       };
     }
 
-    // Create new folder
+
     const folder = await drive.files.create({
       resource: {
         name: folderName,
@@ -133,7 +133,7 @@ export const createCandidateFolder = async (candidateName, position, city) => {
   }
 };
 
-// Upload a file to candidate's folder
+
 export const uploadFileToDrive = async (folderId, filePath, fileName, mimeType) => {
   try {
     const drive = await getDriveClient();
@@ -152,7 +152,7 @@ export const uploadFileToDrive = async (folderId, filePath, fileName, mimeType) 
 
     console.log(`✅ Uploaded file: ${fileName} (${file.data.id})`);
 
-    // Make file viewable by anyone with link
+
     try {
       await drive.permissions.create({
         fileId: file.data.id,
@@ -177,7 +177,7 @@ export const uploadFileToDrive = async (folderId, filePath, fileName, mimeType) 
   }
 };
 
-// List all files in a candidate's folder
+
 export const listFolderFiles = async (folderId) => {
   try {
     const drive = await getDriveClient();
@@ -195,7 +195,7 @@ export const listFolderFiles = async (folderId) => {
   }
 };
 
-// Delete a file from Drive
+
 export const deleteFileFromDrive = async (fileId) => {
   try {
     const drive = await getDriveClient();
@@ -208,7 +208,7 @@ export const deleteFileFromDrive = async (fileId) => {
   }
 };
 
-// Get Drive connection status
+
 export const getDriveStatus = async () => {
   try {
     if (!hasValidToken()) {

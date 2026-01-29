@@ -97,17 +97,17 @@ const appendToSheet = async (sheetKey, candidateData) => {
     const formFData = profileData.formFData || {};
     const form11Data = profileData.form11Data || {};
     
-    // Helper to get value from multiple sources
+
     const getValue = (key, ...altKeys) => {
-      // Check profileData first
+
       if (profileData[key]) return profileData[key];
-      // Check joiningFormData
+
       if (joiningData[key]) return joiningData[key];
-      // Check form11Data
+
       if (form11Data[key]) return form11Data[key];
-      // Check formFData
+
       if (formFData[key]) return formFData[key];
-      // Check alternative keys
+
       for (const altKey of altKeys) {
         if (profileData[altKey]) return profileData[altKey];
         if (joiningData[altKey]) return joiningData[altKey];

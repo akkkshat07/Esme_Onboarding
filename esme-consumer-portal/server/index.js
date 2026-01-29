@@ -27,14 +27,14 @@ dotenv.config();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
-// File size limits
+
 const FILE_SIZE_LIMITS = {
-  image: 2 * 1024 * 1024,  // 2MB for images
-  pdf: 5 * 1024 * 1024,    // 5MB for PDFs
-  default: 5 * 1024 * 1024 // 5MB default
+  image: 2 * 1024 * 1024, 
+  pdf: 5 * 1024 * 1024,   
+  default: 5 * 1024 * 1024
 };
 
-// Allowed file types
+
 const ALLOWED_MIME_TYPES = [
   'application/pdf',
   'image/jpeg',
@@ -42,11 +42,11 @@ const ALLOWED_MIME_TYPES = [
   'image/png'
 ];
 
-// Configure multer with file size limit and file filter
+
 const upload = multer({ 
   dest: 'uploads/',
   limits: {
-    fileSize: FILE_SIZE_LIMITS.default // 5MB max
+    fileSize: FILE_SIZE_LIMITS.default
   },
   fileFilter: (req, file, cb) => {
     if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
@@ -60,7 +60,7 @@ const upload = multer({
 app.use(cors());
 app.use(express.json());
 
-// Request logging middleware
+
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
@@ -69,7 +69,7 @@ app.use((req, res, next) => {
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/esme_onboarding')
   .then(() => {
     console.log('✅ Connected to MongoDB');
-    // Ensure super admin user exists for testing
+
     const createSuperAdmin = async () => {
       const adminEmail = 'admin@esmeconsumer.in';
       const admin = await User.findOne({ email: adminEmail });
@@ -83,7 +83,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/esme_onbo
         });
         console.log(`✨ Default super admin created (${adminEmail})`);
       } else if (admin.role !== 'super_admin') {
-        // Upgrade existing admin to super_admin
+
         await User.findByIdAndUpdate(admin._id, { role: 'super_admin' });
         console.log(`✨ Upgraded ${adminEmail} to super admin`);
       }
@@ -98,7 +98,7 @@ app.post('/api/signup', async (req, res) => {
   try {
     const { name, email, mobile, password } = req.body;
     
-    // Check if candidate is in the whitelist
+
     const whitelistCheck = await isWhitelisted(mobile, email);
     if (!whitelistCheck.allowed) {
       return res.status(403).json({ 
@@ -138,7 +138,7 @@ app.post('/api/login', async (req, res) => {
 
     if (!user) return res.status(401).json({ message: 'Invalid credentials' });
 
-    // For non-admin users, verify they are still in whitelist
+
     if (user.role !== 'admin' && user.role !== 'super_admin') {
       const whitelistCheck = await isWhitelisted(user.mobile, user.email);
       if (!whitelistCheck.allowed) {
@@ -158,7 +158,7 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// Admin: Refresh whitelist cache
+
 app.post('/api/admin/refresh-whitelist', async (req, res) => {
   try {
     const stats = await refreshWhitelist();
@@ -168,7 +168,7 @@ app.post('/api/admin/refresh-whitelist', async (req, res) => {
   }
 });
 
-// Admin: Get whitelist stats
+
 app.get('/api/admin/whitelist-stats', async (req, res) => {
   try {
     const stats = await getWhitelistStats();
@@ -187,7 +187,7 @@ app.get('/api/candidates', async (req, res) => {
   }
 });
 
-// Get single candidate by email
+
 app.get('/api/candidate/:email', async (req, res) => {
   try {
     const candidate = await User.findOne({ email: req.params.email, role: 'candidate' });
@@ -209,14 +209,8 @@ app.post('/api/save-profile', async (req, res) => {
       { new: true }
     );
     
-    // Google Sheets sync deferred for later
-    /*
-    await appendToSheet(process.env.GOOGLE_SHEET_ID, 'OnboardingData!A:O', [
-      user.name, user.email, profileData.fatherName, profileData.dob, 
-      profileData.panNumber, profileData.aadhaarNumber, profileData.bankName,
-      profileData.accountNumber, profileData.ifscCode
-    ]);
-    */
+
+    
 
     res.json({ success: true });
   } catch (err) {
@@ -224,7 +218,7 @@ app.post('/api/save-profile', async (req, res) => {
   }
 });
 
-// Wrapper to handle multer errors
+
 const handleUpload = (req, res, next) => {
   upload.single('file')(req, res, (err) => {
     if (err) {
@@ -258,7 +252,7 @@ app.post('/api/upload', handleUpload, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Check if user is locked (cannot upload)
+
     if (user.isLocked) {
       if (req.file?.path && fs.existsSync(req.file.path)) {
         fs.unlinkSync(req.file.path);
@@ -276,7 +270,7 @@ app.post('/api/upload', handleUpload, async (req, res) => {
     let documentRecord = null;
     let driveFolder = user.driveFolder;
 
-    // Try Google Drive if OAuth connected
+
     if (hasValidToken()) {
       try {
         if (!driveFolder?.folderId) {
@@ -314,7 +308,7 @@ app.post('/api/upload', handleUpload, async (req, res) => {
       }
     }
 
-    // Fallback to local storage
+
     if (!documentRecord) {
       console.log('📁 Using local storage...');
       const candidateFolderPath = path.join(__dirname, 'uploads', `${candidateName}_${role}`);
@@ -351,7 +345,7 @@ app.post('/api/upload', handleUpload, async (req, res) => {
   }
 });
 
-// Admin: Get specific candidate details
+
 app.get('/api/candidates/:id', async (req, res) => {
   try {
     const candidate = await User.findById(req.params.id);
@@ -362,36 +356,36 @@ app.get('/api/candidates/:id', async (req, res) => {
   }
 });
 
-// Admin: Update candidate status
+
 app.patch('/api/candidates/:id/status', async (req, res) => {
   try {
     const { status, department, employeeId, hrRemarks, designation } = req.body;
     
-    // Build update object
+
     const updateData = { status };
     
-    // If department is provided, update it in profileData
+
     if (department) {
       updateData['profileData.department'] = department;
     }
     
-    // If employeeId is provided, update it
+
     if (employeeId !== undefined) {
       updateData.employeeId = employeeId;
     }
     
-    // If hrRemarks is provided, update it
+
     if (hrRemarks !== undefined) {
       updateData.hrRemarks = hrRemarks;
     }
     
-    // If designation is provided, update it
+
     if (designation !== undefined) {
       updateData.designation = designation;
       updateData['profileData.profession'] = designation;
     }
     
-    // If status is 'approved', set approvedAt and hrVerified
+
     if (status === 'approved') {
       updateData.approvedAt = new Date();
       updateData.hrVerified = true;
@@ -410,7 +404,7 @@ app.patch('/api/candidates/:id/status', async (req, res) => {
   }
 });
 
-// Admin: Delete candidate completely
+
 app.delete('/api/candidates/:id', async (req, res) => {
   try {
     const candidate = await User.findById(req.params.id);
@@ -418,7 +412,7 @@ app.delete('/api/candidates/:id', async (req, res) => {
       return res.status(404).json({ message: 'Candidate not found' });
     }
     
-    // Delete the candidate from database
+
     await User.findByIdAndDelete(req.params.id);
     
     console.log(`🗑️ Deleted candidate: ${candidate.name} (${candidate.email})`);
@@ -435,9 +429,9 @@ app.post('/api/candidates', async (req, res) => {
     
     const existingCandidate = await User.findOne({ email: req.body.email });
     
-    // Use status from request body if provided, otherwise 'pending'
+
     const newStatus = req.body.status || 'pending';
-    // Lock the candidate when they submit
+
     const shouldLock = newStatus === 'submitted';
     
     let candidate;
@@ -449,7 +443,7 @@ app.post('/api/candidates', async (req, res) => {
           mobile: req.body.mobile,
           profileData: req.body.profileData,
           status: newStatus,
-          ...(shouldLock && { isLocked: true, submittedAt: new Date() }) // Lock on submission and set submittedAt
+          ...(shouldLock && { isLocked: true, submittedAt: new Date() })
         },
         { new: true }
       );
@@ -462,8 +456,8 @@ app.post('/api/candidates', async (req, res) => {
         password: req.body.mobile,
         profileData: req.body.profileData,
         status: newStatus,
-        isLocked: shouldLock, // Lock on submission
-        ...(shouldLock && { submittedAt: new Date() }) // Set submittedAt if submitting
+        isLocked: shouldLock,
+        ...(shouldLock && { submittedAt: new Date() })
       });
       await candidate.save();
       console.log('✅ Candidate saved to DB:', candidate._id, 'Status:', newStatus, 'Locked:', shouldLock);
@@ -497,7 +491,7 @@ app.post('/api/candidates', async (req, res) => {
   }
 });
 
-// Lock/Unlock candidate (Admin only)
+
 app.patch('/api/candidates/:id/lock', async (req, res) => {
   try {
     const { isLocked } = req.body;
@@ -573,7 +567,7 @@ app.post('/api/candidates/:id/attendance-sync', async (req, res) => {
   }
 });
 
-// Test endpoint to manually resync a candidate to Google Sheet
+
 app.post('/api/test-sync/:email', async (req, res) => {
   try {
     const candidate = await User.findOne({ email: req.params.email });
@@ -592,14 +586,14 @@ app.post('/api/test-sync/:email', async (req, res) => {
   }
 });
 
-// Serve uploaded files
+
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// =============================================
-// GOOGLE DRIVE OAUTH ENDPOINTS
-// =============================================
 
-// Check Drive connection status
+
+
+
+
 app.get('/api/auth/google/status', async (req, res) => {
   try {
     const status = await getDriveStatus();
@@ -609,7 +603,7 @@ app.get('/api/auth/google/status', async (req, res) => {
   }
 });
 
-// Initiate Google OAuth flow
+
 app.get('/api/auth/google', (req, res) => {
   try {
     const authUrl = getAuthUrl();
@@ -619,7 +613,7 @@ app.get('/api/auth/google', (req, res) => {
   }
 });
 
-// Handle OAuth callback
+
 app.get('/api/auth/google/callback', async (req, res) => {
   try {
     const { code } = req.query;
@@ -629,7 +623,7 @@ app.get('/api/auth/google/callback', async (req, res) => {
     
     await handleAuthCallback(code);
     
-    // Redirect to admin dashboard with success message
+
     res.send(`
       <!DOCTYPE html>
       <html>
@@ -668,14 +662,14 @@ app.get('/api/auth/google/callback', async (req, res) => {
   }
 });
 
-// =============================================
-// ADMIN MANAGEMENT ENDPOINTS
-// =============================================
 
-// Get all admins (Any admin can view, but only super_admin can modify)
+
+
+
+
 app.get('/api/admin/admins', async (req, res) => {
   try {
-    const { userId } = req.query; // In production, get from JWT token
+    const { userId } = req.query;
     const requestingUser = await User.findById(userId);
     
     if (!requestingUser || (requestingUser.role !== 'super_admin' && requestingUser.role !== 'admin')) {
@@ -692,18 +686,18 @@ app.get('/api/admin/admins', async (req, res) => {
   }
 });
 
-// Create new admin (Super Admin only)
+
 app.post('/api/admin/create-admin', async (req, res) => {
   try {
     const { name, email, mobile, password, creatorId } = req.body;
     
-    // Verify creator is super_admin
+
     const creator = await User.findById(creatorId);
     if (!creator || creator.role !== 'super_admin') {
       return res.status(403).json({ message: 'Access denied. Super Admin only.' });
     }
     
-    // Check if email or mobile already exists
+
     const existing = await User.findOne({ $or: [{ email }, { mobile }] });
     if (existing) {
       return res.status(400).json({ message: 'Admin with this email or mobile already exists.' });
@@ -737,7 +731,7 @@ app.post('/api/admin/create-admin', async (req, res) => {
   }
 });
 
-// Delete admin (Super Admin only)
+
 app.delete('/api/admin/admins/:id', async (req, res) => {
   try {
     const { userId } = req.query;
@@ -752,12 +746,12 @@ app.delete('/api/admin/admins/:id', async (req, res) => {
       return res.status(404).json({ message: 'Admin not found.' });
     }
     
-    // Cannot delete yourself
+
     if (adminToDelete._id.toString() === userId) {
       return res.status(400).json({ message: 'Cannot delete yourself.' });
     }
     
-    // Cannot delete other super admins
+
     if (adminToDelete.role === 'super_admin') {
       return res.status(400).json({ message: 'Cannot delete super admin accounts.' });
     }
@@ -771,7 +765,7 @@ app.delete('/api/admin/admins/:id', async (req, res) => {
   }
 });
 
-// Change password (for any admin role)
+
 app.post('/api/admin/change-password', async (req, res) => {
   try {
     const { userId, currentPassword, newPassword } = req.body;
@@ -781,12 +775,12 @@ app.post('/api/admin/change-password', async (req, res) => {
       return res.status(404).json({ message: 'User not found.' });
     }
     
-    // Verify current password
+
     if (user.password !== currentPassword) {
       return res.status(401).json({ message: 'Current password is incorrect.' });
     }
     
-    // Validate new password
+
     if (!newPassword || newPassword.length < 8) {
       return res.status(400).json({ message: 'New password must be at least 8 characters.' });
     }
@@ -803,7 +797,7 @@ app.post('/api/admin/change-password', async (req, res) => {
   }
 });
 
-// Get admin profile
+
 app.get('/api/admin/profile/:id', async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select('-password');
@@ -816,11 +810,11 @@ app.get('/api/admin/profile/:id', async (req, res) => {
   }
 });
 
-// =============================================
-// OTP ENDPOINTS (MSG91)
-// =============================================
 
-// Send OTP
+
+
+
+
 app.post('/api/otp/send', async (req, res) => {
   try {
     const { mobile } = req.body;
@@ -841,7 +835,7 @@ app.post('/api/otp/send', async (req, res) => {
   }
 });
 
-// Verify OTP
+
 app.post('/api/otp/verify', async (req, res) => {
   try {
     const { mobile, otp } = req.body;
@@ -862,7 +856,7 @@ app.post('/api/otp/verify', async (req, res) => {
   }
 });
 
-// Resend OTP
+
 app.post('/api/otp/resend', async (req, res) => {
   try {
     const { mobile, type } = req.body;
@@ -883,11 +877,11 @@ app.post('/api/otp/resend', async (req, res) => {
   }
 });
 
-// =============================================
-// AADHAAR VERIFICATION ENDPOINTS
-// =============================================
 
-// Generate Aadhaar OTP
+
+
+
+
 app.post('/api/aadhaar/generate-otp', async (req, res) => {
   try {
     const { aadhaarNumber, email } = req.body;
@@ -896,14 +890,14 @@ app.post('/api/aadhaar/generate-otp', async (req, res) => {
       return res.status(400).json({ message: 'Aadhaar number is required.' });
     }
     
-    // Validate Aadhaar number format
+
     const validation = validateAadhaarNumber(aadhaarNumber);
     
     if (!validation.success) {
       return res.status(400).json(validation);
     }
     
-    // Store the Aadhaar data for the user
+
     if (email) {
       const user = await User.findOne({ email });
       if (user) {
@@ -934,7 +928,7 @@ app.post('/api/aadhaar/generate-otp', async (req, res) => {
   }
 });
 
-// Verify Aadhaar OTP and get details
+
 app.post('/api/aadhaar/verify-otp', async (req, res) => {
   try {
     const { aadhaarNumber, email } = req.body;
@@ -943,11 +937,11 @@ app.post('/api/aadhaar/verify-otp', async (req, res) => {
       return res.status(400).json({ message: 'Aadhaar number is required.' });
     }
     
-    // For now, just validate and retrieve the stored data
+
     const result = await getAadhaarDetails(aadhaarNumber);
     
     if (result.success && email) {
-      // Mark as verified (after document upload in next step)
+
       await User.findOneAndUpdate(
         { email },
         {
@@ -965,7 +959,7 @@ app.post('/api/aadhaar/verify-otp', async (req, res) => {
   }
 });
 
-// Check Aadhaar verification status
+
 app.get('/api/aadhaar/status/:email', async (req, res) => {
   try {
     const user = await User.findOne({ email: req.params.email });
