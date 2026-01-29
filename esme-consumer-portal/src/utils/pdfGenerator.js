@@ -3,26 +3,26 @@ import { jsPDF } from 'jspdf';
 
 const PDF_BASE_PATH = '/forms';
 
-// Helper: Set text field safely with proper formatting
+
 const setTextField = (form, fieldName, value, options = {}) => {
   try {
     const field = form.getTextField(fieldName);
     if (field && value !== undefined && value !== null && value !== '') {
       let textValue = String(value).trim();
       
-      // Convert to uppercase if specified (for block letters)
+
       if (options.uppercase) {
         textValue = textValue.toUpperCase();
       }
       
-      // Limit text length if specified
+
       if (options.maxLength && textValue.length > options.maxLength) {
         textValue = textValue.substring(0, options.maxLength);
       }
       
       field.setText(textValue);
       
-      // Set font size if specified (for consistency)
+
       if (options.fontSize) {
         field.setFontSize(options.fontSize);
       }
@@ -32,7 +32,7 @@ const setTextField = (form, fieldName, value, options = {}) => {
   }
 };
 
-// Helper: Set checkbox safely
+
 const setCheckbox = (form, fieldName, shouldCheck) => {
   try {
     const field = form.getCheckBox(fieldName);
@@ -44,8 +44,8 @@ const setCheckbox = (form, fieldName, shouldCheck) => {
   }
 };
 
-// Helper: Process signature to ensure it has dark strokes on white/transparent background
-// This fixes signatures made in dark mode
+
+
 const processSignatureForPDF = (signatureDataUrl) => {
   return new Promise((resolve) => {
     if (!signatureDataUrl) {
@@ -60,18 +60,18 @@ const processSignatureForPDF = (signatureDataUrl) => {
       canvas.height = img.height;
       const ctx = canvas.getContext('2d');
       
-      // Start with white background
+
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      // Draw the original signature
+
       ctx.drawImage(img, 0, 0);
       
-      // Get image data
+
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const data = imageData.data;
       
-      // Analyze the image to detect if it's a dark mode signature
+
       let darkPixelCount = 0;
       let lightPixelCount = 0;
       
@@ -81,22 +81,22 @@ const processSignatureForPDF = (signatureDataUrl) => {
         if (brightness > 200) lightPixelCount++;
       }
       
-      // If mostly dark background (dark mode), invert the colors
+
       const isDarkMode = darkPixelCount > lightPixelCount * 0.5;
       
       if (isDarkMode) {
-        // For dark mode signatures: make dark pixels white, light pixels black
+
         for (let i = 0; i < data.length; i += 4) {
           const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
           
           if (brightness < 80) {
-            // Dark background -> make white/transparent
+
             data[i] = 255;
             data[i + 1] = 255;
             data[i + 2] = 255;
             data[i + 3] = 255;
           } else if (brightness > 180) {
-            // Light strokes (signature in dark mode) -> make black
+
             data[i] = 0;
             data[i + 1] = 0;
             data[i + 2] = 0;
@@ -105,7 +105,7 @@ const processSignatureForPDF = (signatureDataUrl) => {
         }
         ctx.putImageData(imageData, 0, 0);
       }
-      // For light mode, signature is already dark on light background - keep as is
+
       
       resolve(canvas.toDataURL('image/png'));
     };
@@ -118,8 +118,8 @@ const processSignatureForPDF = (signatureDataUrl) => {
   });
 };
 
-// Helper: Embed signature image into button field
-// ALWAYS process for dark mode since both admin and candidates could sign in dark mode
+
+
 const embedSignature = async (pdfDoc, form, fieldName, signatureDataUrl) => {
   if (!signatureDataUrl) {
     console.log('No signature data provided for: ' + fieldName);
@@ -132,7 +132,7 @@ const embedSignature = async (pdfDoc, form, fieldName, signatureDataUrl) => {
       return;
     }
     
-    // ALWAYS process signature for dark mode - both admin and candidates might sign in dark mode
+
     console.log('Processing signature for field: ' + fieldName);
     let processedSignature = await processSignatureForPDF(signatureDataUrl);
     
@@ -154,7 +154,7 @@ const embedSignature = async (pdfDoc, form, fieldName, signatureDataUrl) => {
       image = await pdfDoc.embedJpg(imageBytes);
     }
     
-    // Set the image on the button field - this fills the button area with the signature
+
     field.setImage(image);
     console.log('Successfully embedded signature for: ' + fieldName + ', image size:', image.width, 'x', image.height);
   } catch (e) {
@@ -162,7 +162,7 @@ const embedSignature = async (pdfDoc, form, fieldName, signatureDataUrl) => {
   }
 };
 
-// Helper: Format date as DD/MM/YYYY
+
 const formatDate = (dateString) => {
   if (!dateString) return '';
   const date = new Date(dateString);
@@ -172,7 +172,7 @@ const formatDate = (dateString) => {
          date.getFullYear();
 };
 
-// Helper: Get date parts
+
 const getDateParts = (dateString) => {
   if (!dateString) return { day: '', month: '', year: '' };
   const date = new Date(dateString);
@@ -184,7 +184,7 @@ const getDateParts = (dateString) => {
   };
 };
 
-// Helper: Split name into parts
+
 const splitName = (fullName) => {
   if (!fullName) return { first: '', middle: '', last: '' };
   const parts = String(fullName).trim().split(/\s+/);
@@ -193,21 +193,21 @@ const splitName = (fullName) => {
   return { first: parts[0], middle: parts.slice(1, -1).join(' '), last: parts[parts.length - 1] };
 };
 
-// ============================================================================
-// FORM 11 - EPF DECLARATION FORM
-// PDF Field Names:
-// TEXT: ifscCode, accountNumber, memberName, aadharNumber, panNumber, memberMiddleName, 
-//       memberLastName, Day, Month, Year, memberFirstName, FatherFirstName, FatherMiddleName,
-//       FatherLastName, mobile, email, uanNumber, previousDOEDay, previousDOEMonth, previousDOEYear,
-//       schemeCertifiedNumber, ppoNumber, nameOfCountry, passportNumnber, passportDayFrom,
-//       passportDayTo, passportMonthFrom, passportMonthTo, passportYearForm, passportYearTo,
-//       formDate, formPlace
-// CHECKBOX: Ms, Mrs, Mr, Father, Husband, Male, Female, Transgender, intYes, intNo, 
-//           PFSyes, PFSno, EPSyes, EPSno, india, nonMatric, 12th, 10th, graduate, 
-//           postgraduate, phd, diploma, married, unmarried, widow/widower, divorcee,
-//           speciallyabledYes, speciallyabledNo, locomotive, visual, hearing
-// IMAGE: signatureOfemployee_af_image
-// ============================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 export const fillForm11 = async (candidateData, employeeSignature, adminSignature) => {
   try {
@@ -222,25 +222,25 @@ export const fillForm11 = async (candidateData, employeeSignature, adminSignatur
     const form = pdfDoc.getForm();
     console.log('Form 11 PDF loaded successfully');
     
-    // Debug: List all form fields
+
     const fields = form.getFields();
     console.log('Form 11 - All field names:');
     fields.forEach(field => {
       console.log('  Field:', field.getName(), '- Type:', field.constructor.name);
     });
     
-    // Embed standard font for consistent text appearance
+
     const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
     
-    // Helper to add spacing between characters for block-style fields
+
     const addCharacterSpacing = (text, spacing = 1) => {
       if (!text) return '';
-      // Add spaces between each character
+
       return text.split('').join(' '.repeat(spacing));
     };
     
-    // Helper to set field with consistent formatting - LARGER FONT SIZE
+
     const setFieldWithStyle = (fieldName, value, fontSize = 11, useBold = false, uppercase = false, addSpacing = false) => {
       try {
         const field = form.getTextField(fieldName);
@@ -249,7 +249,7 @@ export const fillForm11 = async (candidateData, employeeSignature, adminSignatur
           if (uppercase) {
             textValue = textValue.toUpperCase();
           }
-          // Add spacing between characters for block-style fields
+
           if (addSpacing) {
             textValue = addCharacterSpacing(textValue, 1);
           }
@@ -262,34 +262,34 @@ export const fillForm11 = async (candidateData, employeeSignature, adminSignatur
       }
     };
     
-    // Extract data from various sources
+
     const profile = candidateData.profileData || candidateData || {};
     const form11 = candidateData.form11Data || profile.form11Data || {};
     const joining = candidateData.joiningFormData || profile.joiningFormData || {};
     
-    // Get full name and split it
+
     const fullName = profile.fullName || 
                      [profile.firstName, profile.middleName, profile.lastName].filter(Boolean).join(' ') ||
                      form11.fullName || '';
     const nameParts = splitName(fullName);
     
-    // Member Name fields - BLOCK LETTERS (uppercase) with character spacing
+
     const firstName = (profile.firstName || nameParts.first || '').trim();
     const middleName = (profile.middleName || nameParts.middle || '').trim();
     const lastName = (profile.lastName || nameParts.last || '').trim();
     
-    // Names in BLOCK LETTERS with spacing for block-style boxes
-    setFieldWithStyle('memberName', fullName, 9, false, true, true); // NAME AS ON KYC - with spacing
-    setFieldWithStyle('memberFirstName', firstName, 10, false, true, true); // With spacing
-    setFieldWithStyle('memberMiddleName', middleName, 10, false, true, true); // With spacing
-    setFieldWithStyle('memberLastName', lastName, 10, false, true, true); // With spacing
+
+    setFieldWithStyle('memberName', fullName, 9, false, true, true);
+    setFieldWithStyle('memberFirstName', firstName, 10, false, true, true);
+    setFieldWithStyle('memberMiddleName', middleName, 10, false, true, true);
+    setFieldWithStyle('memberLastName', lastName, 10, false, true, true);
     
-    // Title checkboxes (Mr/Ms/Mrs) - improved logic
+
     const title = (profile.title || profile.salutation || form11.title || '').toLowerCase().replace('.', '');
     const gender = (profile.gender || form11.gender || joining.gender || '').toLowerCase();
     const marital = (profile.maritalStatus || form11.maritalStatus || joining.maritalStatus || '').toLowerCase();
     
-    // Better title/gender logic
+
     const isMale = gender === 'male' || gender === 'm';
     const isFemale = gender === 'female' || gender === 'f';
     const isMarried = marital === 'married';
@@ -310,27 +310,27 @@ export const fillForm11 = async (candidateData, employeeSignature, adminSignatur
       }
     }
     
-    // Date of Birth - with spacing for box fields
+
     const dob = profile.dateOfBirth || profile.dob || form11.dateOfBirth || joining.dateOfBirth || '';
     const dobParts = getDateParts(dob);
     setFieldWithStyle('Day', dobParts.day, 12, false, false, true);
     setFieldWithStyle('Month', dobParts.month, 12, false, false, true);
     setFieldWithStyle('Year', dobParts.year, 11, false, false, true);
     
-    // Father/Spouse Name - BLOCK LETTERS with spacing
+
     const fatherName = profile.fatherName || form11.fatherName || joining.fatherName || profile.fatherHusbandName || '';
     const fatherParts = splitName(fatherName);
     setFieldWithStyle('FatherFirstName', fatherParts.first, 10, false, true, true);
     setFieldWithStyle('FatherMiddleName', fatherParts.middle, 10, false, true, true);
     setFieldWithStyle('FatherLastName', fatherParts.last, 10, false, true, true);
     
-    // Father/Husband relation checkbox - improved logic
+
     const relation = (form11.relationWithNominee || form11.fatherHusbandRelation || profile.fatherHusbandRelation || '').toLowerCase();
     const isHusband = relation === 'husband' || relation === 'spouse' || (isFemale && isMarried);
     setCheckbox(form, 'Father', !isHusband);
     setCheckbox(form, 'Husband', isHusband);
     
-    // Gender checkboxes - only check one
+
     if (isMale) {
       setCheckbox(form, 'Male', true);
     } else if (isFemale) {
@@ -339,27 +339,27 @@ export const fillForm11 = async (candidateData, employeeSignature, adminSignatur
       setCheckbox(form, 'Transgender', true);
     }
     
-    // Contact Details - with spacing for phone number
+
     const mobile = String(profile.mobileNumber || profile.mobile || profile.phone || form11.mobileNumber || joining.mobileNumber || '').replace(/\D/g, '').slice(-10);
     setFieldWithStyle('mobile', mobile, 10, false, false, true);
     setFieldWithStyle('email', profile.email || profile.personalEmail || form11.email || joining.personalEmail || '', 9);
     
-    // Identity Documents - with spacing for block-style fields
+
     const aadhaar = String(profile.aadhaarNumber || profile.aadharNumber || form11.aadhaarNumber || joining.aadhaarNumber || '').replace(/\D/g, '');
     const pan = String(profile.panNumber || form11.panNumber || joining.panNumber || '').toUpperCase().trim();
     setFieldWithStyle('aadharNumber', aadhaar, 10, false, false, true);
     setFieldWithStyle('panNumber', pan, 10, false, true, true);
     
-    // Bank Details - with spacing for block-style fields
+
     const accountNo = String(profile.bankAccountNumber || profile.accountNumber || form11.bankAccountNumber || joining.bankAccountNumber || '').trim();
     const ifsc = String(profile.ifscCode || profile.bankIfscCode || form11.ifscCode || joining.ifscCode || '').toUpperCase().trim();
     setFieldWithStyle('accountNumber', accountNo, 10, false, false, true);
     setFieldWithStyle('ifscCode', ifsc, 10, false, true, true);
     
-    // UAN Number - with spacing
+
     setFieldWithStyle('uanNumber', profile.uanNumber || form11.uanNumber || form11.previousUAN || '', 10, false, false, true);
     
-    // Previous Employment DOE (Date of Exit) - with spacing
+
     const prevDOE = form11.previousEmploymentExitDate || form11.previousDOE || '';
     if (prevDOE) {
       const prevDOEParts = getDateParts(prevDOE);
@@ -368,11 +368,11 @@ export const fillForm11 = async (candidateData, employeeSignature, adminSignatur
       setFieldWithStyle('previousDOEYear', prevDOEParts.year, 10, false, false, true);
     }
     
-    // Scheme Certificate & PPO
+
     setFieldWithStyle('schemeCertifiedNumber', form11.schemeCertificateNumber || form11.previousPFNumber || '', 9, false, false, true);
     setFieldWithStyle('ppoNumber', form11.ppoNumber || '', 9);
     
-    // Education Qualification checkboxes - only check ONE appropriate level
+
     const education = (profile.education || profile.qualification || form11.education || joining.qualification || profile.highestQualification || '').toLowerCase();
     let educationChecked = false;
     
@@ -404,12 +404,12 @@ export const fillForm11 = async (candidateData, employeeSignature, adminSignatur
       setCheckbox(form, 'nonMatric', true);
       educationChecked = true;
     }
-    // Default to graduate if nothing matches and education is provided
+
     if (!educationChecked && education.length > 0) {
       setCheckbox(form, 'graduate', true);
     }
     
-    // Marital Status checkboxes - only check ONE
+
     if (marital === 'married') {
       setCheckbox(form, 'married', true);
     } else if (marital === 'unmarried' || marital === 'single') {
@@ -419,11 +419,11 @@ export const fillForm11 = async (candidateData, employeeSignature, adminSignatur
     } else if (marital === 'divorced' || marital === 'divorcee') {
       setCheckbox(form, 'divorcee', true);
     } else if (marital) {
-      // Default to unmarried if status provided but not recognized
+
       setCheckbox(form, 'unmarried', true);
     }
     
-    // Specially Abled checkboxes - always check one
+
     const speciallyAbled = form11.speciallyAbled || form11.isSpeciallyAbled || profile.speciallyAbled || profile.isDisabled || '';
     const speciallyAbledStr = String(speciallyAbled).toLowerCase();
     const isSpeciallyAbled = speciallyAbledStr === 'yes' || speciallyAbledStr === 'true' || speciallyAbled === true;
@@ -444,7 +444,7 @@ export const fillForm11 = async (candidateData, employeeSignature, adminSignatur
       setCheckbox(form, 'speciallyabledNo', true);
     }
     
-    // International Worker - always check one
+
     const intWorker = form11.internationalWorker || form11.isInternationalWorker || profile.internationalWorker || '';
     const intWorkerStr = String(intWorker).toLowerCase();
     const isInternational = intWorkerStr === 'yes' || intWorkerStr === 'true' || intWorker === true;
@@ -456,11 +456,11 @@ export const fillForm11 = async (candidateData, employeeSignature, adminSignatur
       setCheckbox(form, 'india', true);
     }
     
-    // Passport Details (for international workers)
+
     setFieldWithStyle('passportNumnber', profile.passportNumber || form11.passportNumber || joining.passportNumber || '', 11, false, true);
     setFieldWithStyle('nameOfCountry', form11.countryOfOrigin || profile.countryOfOrigin || 'INDIA', 11, false, true);
     
-    // Passport Validity dates
+
     const passportFrom = form11.passportValidityFrom || profile.passportValidityFrom || '';
     const passportTo = form11.passportValidityTo || form11.passportValidity || profile.passportValidityTo || '';
     if (passportFrom) {
@@ -476,7 +476,7 @@ export const fillForm11 = async (candidateData, employeeSignature, adminSignatur
       setFieldWithStyle('passportYearTo', toParts.year, 12);
     }
     
-    // EPF/EPS Options - always check one for each
+
     const epsOption = form11.optForEPS || form11.epsOption || profile.epsOption || '';
     const epsStr = String(epsOption).toLowerCase();
     const optEPS = epsStr !== 'no' && epsStr !== 'false' && epsOption !== false;
@@ -485,30 +485,30 @@ export const fillForm11 = async (candidateData, employeeSignature, adminSignatur
     const pfsStr = String(pfsOption).toLowerCase();
     const optPFS = pfsStr === 'yes' || pfsStr === 'true' || pfsOption === true;
     
-    // EPS checkboxes
+
     if (optEPS) {
       setCheckbox(form, 'EPSyes', true);
     } else {
       setCheckbox(form, 'EPSno', true);
     }
     
-    // PFS checkboxes
+
     if (optPFS) {
       setCheckbox(form, 'PFSyes', true);
     } else {
       setCheckbox(form, 'PFSno', true);
     }
     
-    // Form Date & Place - larger font
+
     setFieldWithStyle('formDate', formatDate(new Date()), 11);
     setFieldWithStyle('formPlace', form11.declarationPlace || profile.currentCity || profile.city || joining.currentCity || 'NEW DELHI', 11, false, true);
     
-    // Employee Signature - always process for dark mode
+
     await embedSignature(pdfDoc, form, 'signatureOfemployee_af_image', 
       employeeSignature || form11.employeeSignature || profile.signature || profile.form11Signature);
     
-    // DO NOT flatten - it causes issues with some PDFs
-    // Just return the filled PDF
+
+
     
     return await pdfDoc.save();
   } catch (error) {
@@ -517,17 +517,17 @@ export const fillForm11 = async (candidateData, employeeSignature, adminSignatur
   }
 };
 
-// ============================================================================
-// FORM F - GRATUITY NOMINATION FORM
-// PDF Field Names:
-// TEXT: Give here name or description of the establishment with full address, Village,
-//       Thana, subdivision, Post office, District, Or rubber stamp thereof,
-//       nomineeName1, nomineeAddress1, nomineeName2, nomineeAddress2, nomineeRelation1,
-//       nomineeRelation2, nomineeAge1, nomineeAge2, nomineeShare1, nomineeShare2,
-//       employeeName, gender, religion, maritalStatus, department, dateOfJoining,
-//       State, formDate, nameWitness1, nameWitness2, witnessSign1, witnessSign2, formPlace
-// IMAGE: SignatureofEmployee_af_image, SignatureofEmployer_af_image
-// ============================================================================
+
+
+
+
+
+
+
+
+
+
+
 
 export const fillFormF = async (candidateData, employeeSignature, adminSignature) => {
   try {
@@ -542,17 +542,17 @@ export const fillFormF = async (candidateData, employeeSignature, adminSignature
     const form = pdfDoc.getForm();
     console.log('Form F PDF loaded successfully');
     
-    // Debug: List all form fields
+
     const fields = form.getFields();
     console.log('Form F - All field names:');
     fields.forEach(field => {
       console.log('  Field:', field.getName(), '- Type:', field.constructor.name);
     });
     
-    // Embed font for consistent styling
+
     const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
     
-    // Helper for styled fields
+
     const setStyledField = (fieldName, value, fontSize = 10) => {
       try {
         const field = form.getTextField(fieldName);
@@ -566,16 +566,16 @@ export const fillFormF = async (candidateData, employeeSignature, adminSignature
       }
     };
     
-    // Extract data from various sources
+
     const profile = candidateData.profileData || candidateData || {};
     const formF = candidateData.formFData || profile.formFData || {};
     const joining = candidateData.joiningFormData || profile.joiningFormData || {};
     
-    // Establishment Details - Leave the "TO" field EMPTY (not pre-filled with company name)
-    // Company name should NOT appear - only filled by employer later if needed
+
+
     setStyledField('Give here name or description of the establishment with full address', '', 9);
     
-    // Address fields - use data from form
+
     setStyledField('Village', formF.village || '', 10);
     setStyledField('Thana', formF.thana || formF.policeStation || '', 10);
     setStyledField('subdivision', formF.subdivision || '', 10);
@@ -584,14 +584,14 @@ export const fillFormF = async (candidateData, employeeSignature, adminSignature
     setStyledField('State', formF.state || profile.currentState || profile.state || joining.currentState || '', 10);
     setStyledField('Or rubber stamp thereof', '', 10);
     
-    // Employee Details - use smaller font for name to fit the field
+
     const fullName = profile.fullName || 
                      [profile.firstName, profile.middleName, profile.lastName].filter(Boolean).join(' ') ||
                      formF.employeeName || '';
-    // Use smaller font (8pt) for employee name to ensure it fits
+
     setStyledField('employeeName', fullName, 8);
     
-    // Use 'sex' field from formF (as it's named 'sex' in the form component)
+
     const gender = formF.sex || profile.gender || formF.gender || joining.gender || '';
     setStyledField('gender', gender, 10);
     
@@ -602,17 +602,17 @@ export const fillFormF = async (candidateData, employeeSignature, adminSignature
     const doj = formF.dateOfJoining || profile.dateOfJoining || joining.dateOfJoining || '';
     setStyledField('dateOfJoining', formatDate(doj), 10);
     
-    // Nominee 1 Details - use sharePercent from form (not default 100)
+
     const nominee1 = formF.nominees?.[0] || formF.nominee1 || {};
     setStyledField('nomineeName1', nominee1.name || formF.nominee1Name || '', 10);
     setStyledField('nomineeAddress1', nominee1.address || formF.nominee1Address || '', 9);
     setStyledField('nomineeRelation1', nominee1.relationship || formF.nominee1Relationship || formF.nominee1Relation || '', 10);
     setStyledField('nomineeAge1', nominee1.age || formF.nominee1Age || '', 10);
-    // Use sharePercent (from form) - NO default value, show what user entered
+
     const nominee1Share = nominee1.sharePercent || nominee1.share || formF.nominee1Share || '';
     setStyledField('nomineeShare1', nominee1Share, 10);
     
-    // Nominee 2 Details (optional) - use sharePercent from form
+
     const nominee2 = formF.nominees?.[1] || formF.nominee2 || {};
     if (nominee2.name || formF.nominee2Name) {
       setStyledField('nomineeName2', nominee2.name || formF.nominee2Name || '', 10);
@@ -623,16 +623,16 @@ export const fillFormF = async (candidateData, employeeSignature, adminSignature
       setStyledField('nomineeShare2', nominee2Share, 10);
     }
     
-    // Witness Details - names and addresses
+
     setStyledField('nameWitness1', formF.witness1Name || formF.witness1 || '', 10);
     setStyledField('addressWitness1', formF.witness1Address || '', 9);
     setStyledField('nameWitness2', formF.witness2Name || formF.witness2 || '', 10);
     setStyledField('addressWitness2', formF.witness2Address || '', 9);
     
-    // Witness signatures - try both text field and image button field names
-    // Some PDFs use text fields, others use image buttons
+
+
     try {
-      // Try as image button first
+
       await embedSignature(pdfDoc, form, 'witnessSign1_af_image', formF.witness1Signature);
       await embedSignature(pdfDoc, form, 'witnessSign2_af_image', formF.witness2Signature);
     } catch (e) {
@@ -645,20 +645,20 @@ export const fillFormF = async (candidateData, employeeSignature, adminSignature
       console.log('Witness button fields not found either');
     }
     
-    // Form Date & Place
+
     setStyledField('formDate', formatDate(formF.nominationDate || new Date()), 10);
     setStyledField('formPlace', formF.place || formF.declarationPlace || profile.currentCity || profile.city || '', 10);
     
-    // Employee signature - ALWAYS embed and process for dark mode
+
     console.log('Form F - Embedding employee signature');
     await embedSignature(pdfDoc, form, 'SignatureofEmployee_af_image', 
       employeeSignature || formF.employeeSignature || profile.signature || profile.formFSignature);
     
-    // Employer/Admin signature - ALWAYS embed for employer certificate section
+
     console.log('Form F - Embedding employer signature');
     await embedSignature(pdfDoc, form, 'SignatureofEmployer_af_image', adminSignature);
     
-    // DO NOT flatten - it can cause issues
+
     
     return await pdfDoc.save();
   } catch (error) {
@@ -667,18 +667,18 @@ export const fillFormF = async (candidateData, employeeSignature, adminSignature
   }
 };
 
-// ============================================================================
-// PF NOMINATION FORM
-// PDF Field Names:
-// TEXT: employeeName, employeeFatherName, employeeDOB, gender, maritalStatus, permanentAddress,
-//       nomineeName1, nomineeAddress1, nomineeName2, nomineeAddress2, nomineeRelationship1,
-//       nomineeRelationship2, nomineeDOB1, nomineeDOB2, nomineeShare2, nomineeShare1,
-//       minorguardiandetails1, epsfamilymemberAddress1-5, epsfamilymemberDOB1-5,
-//       epsfamilymemberrelation1-5, epsfamilymembername1-5, nomineewidowpension,
-//       nomineewidowDOB, nomineewidowrelation, formPlace, formDate
-// CHECKBOX: signatureOfemployee_af_image (actually seems to be misnamed in PDF)
-// IMAGE: signatureOfemployer_af_image
-// ============================================================================
+
+
+
+
+
+
+
+
+
+
+
+
 
 export const fillPFNomination = async (candidateData, employeeSignature, adminSignature) => {
   try {
@@ -693,10 +693,10 @@ export const fillPFNomination = async (candidateData, employeeSignature, adminSi
     const form = pdfDoc.getForm();
     console.log('PF Nomination PDF loaded successfully');
     
-    // Embed font for consistent styling
+
     const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
     
-    // Helper for styled fields
+
     const setStyledField = (fieldName, value, fontSize = 10) => {
       try {
         const field = form.getTextField(fieldName);
@@ -710,12 +710,12 @@ export const fillPFNomination = async (candidateData, employeeSignature, adminSi
       }
     };
     
-    // Extract data from various sources
+
     const profile = candidateData.profileData || candidateData || {};
     const pfNom = candidateData.pfNominationData || profile.pfNominationData || {};
     const joining = candidateData.joiningFormData || profile.joiningFormData || {};
     
-    // Employee Details
+
     const fullName = profile.fullName || 
                      [profile.firstName, profile.middleName, profile.lastName].filter(Boolean).join(' ') ||
                      pfNom.employeeName || '';
@@ -728,14 +728,14 @@ export const fillPFNomination = async (candidateData, employeeSignature, adminSi
     setStyledField('gender', profile.gender || pfNom.gender || joining.gender || '', 10);
     setStyledField('maritalStatus', profile.maritalStatus || pfNom.maritalStatus || joining.maritalStatus || '', 10);
     
-    // Permanent Address
+
     const permAddress = profile.permanentAddress || 
                         pfNom.permanentAddress || 
                         joining.permanentAddress ||
                         [profile.address, profile.city, profile.state, profile.pincode].filter(Boolean).join(', ') || '';
     setStyledField('permanentAddress', permAddress, 9);
     
-    // EPF Nominee 1 Details
+
     const nominee1 = pfNom.nominees?.[0] || pfNom.nominee1 || {};
     setStyledField('nomineeName1', nominee1.name || pfNom.nominee1Name || '', 10);
     setStyledField('nomineeAddress1', nominee1.address || pfNom.nominee1Address || '', 9);
@@ -743,7 +743,7 @@ export const fillPFNomination = async (candidateData, employeeSignature, adminSi
     setStyledField('nomineeDOB1', formatDate(nominee1.dob || pfNom.nominee1DOB || ''), 10);
     setStyledField('nomineeShare1', nominee1.share || pfNom.nominee1Share || '100', 10);
     
-    // EPF Nominee 2 Details (optional)
+
     const nominee2 = pfNom.nominees?.[1] || pfNom.nominee2 || {};
     if (nominee2.name || pfNom.nominee2Name) {
       setStyledField('nomineeName2', nominee2.name || pfNom.nominee2Name || '', 10);
@@ -753,14 +753,14 @@ export const fillPFNomination = async (candidateData, employeeSignature, adminSi
       setStyledField('nomineeShare2', nominee2.share || pfNom.nominee2Share || '', 10);
     }
     
-    // Minor Guardian Details (if nominee is minor)
+
     const guardianDetails = pfNom.minorGuardianDetails || pfNom.guardianDetails || '';
     if (guardianDetails || pfNom.minorGuardianName) {
       setStyledField('minorguardiandetails1', guardianDetails || 
         'Name: ' + (pfNom.minorGuardianName || '') + ', Address: ' + (pfNom.minorGuardianAddress || ''), 9);
     }
     
-    // EPS Family Members (up to 5)
+
     const familyMembers = pfNom.epsFamilyMembers || pfNom.familyMembers || [];
     for (let i = 0; i < 5; i++) {
       const member = familyMembers[i] || pfNom['epsFamilyMember' + (i+1)] || {};
@@ -770,17 +770,17 @@ export const fillPFNomination = async (candidateData, employeeSignature, adminSi
       setStyledField('epsfamilymemberrelation' + (i+1), member.relationship || member.relation || '', 9);
     }
     
-    // Widow/Widower Pension Nominee
+
     const widowNominee = pfNom.widowNominee || {};
     setStyledField('nomineewidowpension', widowNominee.name || pfNom.widowNomineeName || '', 10);
     setStyledField('nomineewidowDOB', formatDate(widowNominee.dob || pfNom.widowNomineeDOB || ''), 10);
     setStyledField('nomineewidowrelation', widowNominee.relationship || pfNom.widowNomineeRelation || '', 10);
     
-    // Form Date & Place
+
     setStyledField('formDate', formatDate(new Date()), 10);
     setStyledField('formPlace', pfNom.place || pfNom.declarationPlace || profile.currentCity || profile.city || 'New Delhi', 10);
     
-    // Signatures - process all signatures for dark mode
+
     try {
       await embedSignature(pdfDoc, form, 'signatureOfemployee_af_image', 
         employeeSignature || pfNom.employeeSignature || profile.signature);
@@ -789,7 +789,7 @@ export const fillPFNomination = async (candidateData, employeeSignature, adminSi
     }
     await embedSignature(pdfDoc, form, 'signatureOfemployer_af_image', adminSignature);
     
-    // DO NOT flatten - it causes "Could not find page for PDFRef" error
+
     
     return await pdfDoc.save();
   } catch (error) {
@@ -798,9 +798,9 @@ export const fillPFNomination = async (candidateData, employeeSignature, adminSi
   }
 };
 
-// ============================================================================
-// GENERATED FORMS (using jsPDF) - for forms that are not fillable PDFs
-// ============================================================================
+
+
+
 
 export const generateEmployeeJoiningForm = async (candidateData, employeeSignature) => {
   const profile = candidateData.profileData || candidateData || {};
@@ -811,7 +811,7 @@ export const generateEmployeeJoiningForm = async (candidateData, employeeSignatu
   const margin = 15;
   let y = 15;
   
-  // Header
+
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
   doc.text('EMPLOYEE JOINING FORM', pageWidth / 2, y, { align: 'center' });
@@ -827,7 +827,7 @@ export const generateEmployeeJoiningForm = async (candidateData, employeeSignatu
   
   const fullName = profile.fullName || [profile.firstName, profile.middleName, profile.lastName].filter(Boolean).join(' ') || '';
   
-  // Helper function to safely get value (handles undefined)
+
   const safeValue = (val) => {
     if (val === undefined || val === null || val === 'undefined' || val === 'null') {
       return '';
@@ -835,7 +835,7 @@ export const generateEmployeeJoiningForm = async (candidateData, employeeSignatu
     return String(val).replace(/undefined/g, '').replace(/null/g, '').trim();
   };
   
-  // Helper function to add field rows
+
   const addRow = (label, value, width = 85) => {
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
@@ -856,7 +856,7 @@ export const generateEmployeeJoiningForm = async (candidateData, employeeSignatu
     y += 8;
   };
   
-  // Personal Information
+
   addSection('PERSONAL INFORMATION');
   y += addRow('Full Name', fullName);
   y += addRow('Date of Birth', formatDate(profile.dateOfBirth || profile.dob || joining.dateOfBirth));
@@ -867,7 +867,7 @@ export const generateEmployeeJoiningForm = async (candidateData, employeeSignatu
   y += addRow('Nationality', profile.nationality || 'Indian');
   y += addRow('Religion', profile.religion || joining.religion);
   
-  // Contact Details
+
   addSection('CONTACT DETAILS');
   y += addRow('Mobile Number', profile.mobileNumber || profile.phone || joining.mobileNumber);
   y += addRow('Email (Personal)', profile.email || profile.personalEmail || joining.personalEmail);
@@ -875,44 +875,44 @@ export const generateEmployeeJoiningForm = async (candidateData, employeeSignatu
   y += addRow('Emergency Contact', joining.emergencyContactName);
   y += addRow('Emergency Phone', joining.emergencyContactPhone);
   
-  // Current Address
+
   addSection('CURRENT ADDRESS');
   y += addRow('Address', (profile.currentAddress || profile.address || joining.currentAddress || '').substring(0, 60));
   y += addRow('City', profile.currentCity || profile.city || joining.currentCity);
   y += addRow('State', profile.currentState || profile.state || joining.currentState);
   y += addRow('Pincode', profile.currentPincode || profile.pincode || joining.currentPincode);
   
-  // Permanent Address
+
   addSection('PERMANENT ADDRESS');
   y += addRow('Address', (profile.permanentAddress || joining.permanentAddress || '').substring(0, 60));
   y += addRow('City', profile.permanentCity || joining.permanentCity);
   y += addRow('State', profile.permanentState || joining.permanentState);
   y += addRow('Pincode', profile.permanentPincode || joining.permanentPincode);
   
-  // Identity Details
+
   addSection('IDENTITY DOCUMENTS');
-  // Get Aadhaar and clean it properly
+
   const aadhaarVal = profile.aadhaarNumber || profile.aadharNumber || joining.aadhaarNumber || joining.aadharNumber || '';
   const cleanAadhaar = String(aadhaarVal).replace(/undefined/g, '').replace(/null/g, '').trim();
   y += addRow('Aadhaar Number', cleanAadhaar);
   y += addRow('PAN Number', profile.panNumber || joining.panNumber);
   y += addRow('Passport Number', profile.passportNumber || joining.passportNumber);
   
-  // Bank Details
+
   addSection('BANK DETAILS');
   y += addRow('Bank Name', profile.bankName || joining.bankName);
   y += addRow('Account Number', profile.bankAccountNumber || profile.accountNumber || joining.bankAccountNumber);
   y += addRow('IFSC Code', profile.ifscCode || profile.bankIfscCode || joining.ifscCode);
   y += addRow('Branch', profile.bankBranch || joining.bankBranch);
   
-  // Employment Details
+
   addSection('EMPLOYMENT DETAILS');
   y += addRow('Department', profile.department || joining.department);
   y += addRow('Designation', profile.designation || joining.designation);
   y += addRow('Date of Joining', formatDate(profile.dateOfJoining || joining.dateOfJoining));
   y += addRow('Employee ID', profile.employeeId || joining.employeeId || 'To be assigned');
   
-  // Signature section
+
   if (y > 250) {
     doc.addPage();
     y = 20;
@@ -934,7 +934,7 @@ export const generateEmployeeJoiningForm = async (candidateData, employeeSignatu
   const rawSig = employeeSignature || profile.signature || joining.employeeSignature;
   if (rawSig) {
     try {
-      // Process signature for dark mode
+
       const sig = await processSignatureForPDF(rawSig);
       if (sig) {
         doc.addImage(sig, 'PNG', margin, y + 3, 40, 15);
@@ -959,7 +959,7 @@ export const generateMedicalInsuranceForm = async (candidateData, employeeSignat
   const margin = 15;
   let y = 15;
   
-  // Header
+
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
   doc.text('MEDICAL INSURANCE ENROLLMENT FORM', pageWidth / 2, y, { align: 'center' });
@@ -975,7 +975,7 @@ export const generateMedicalInsuranceForm = async (candidateData, employeeSignat
   
   const fullName = profile.fullName || [profile.firstName, profile.middleName, profile.lastName].filter(Boolean).join(' ') || '';
   
-  // Employee Details Section
+
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
   doc.setFillColor(240, 240, 240);
@@ -1004,7 +1004,7 @@ export const generateMedicalInsuranceForm = async (candidateData, employeeSignat
   addRow('Email', profile.email || profile.personalEmail || joining.personalEmail);
   addRow('Address', (profile.currentAddress || profile.address || joining.currentAddress || '').substring(0, 50));
   
-  // Dependents Section
+
   y += 5;
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
@@ -1013,7 +1013,7 @@ export const generateMedicalInsuranceForm = async (candidateData, employeeSignat
   doc.text('DEPENDENT DETAILS', margin + 2, y + 1);
   y += 10;
   
-  // Table header
+
   doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
   const cols = [margin, margin + 8, margin + 55, margin + 85, margin + 110, margin + 135, margin + 160];
@@ -1045,7 +1045,7 @@ export const generateMedicalInsuranceForm = async (candidateData, employeeSignat
     });
   }
   
-  // Declaration
+
   y += 10;
   doc.setFontSize(9);
   doc.setFont('helvetica', 'italic');
@@ -1064,7 +1064,7 @@ export const generateMedicalInsuranceForm = async (candidateData, employeeSignat
   const rawSig = employeeSignature || profile.signature || medical.employeeSignature;
   if (rawSig) {
     try {
-      // Process signature for dark mode
+
       const sig = await processSignatureForPDF(rawSig);
       if (sig) {
         doc.addImage(sig, 'PNG', margin, y + 3, 40, 15);
@@ -1087,7 +1087,7 @@ export const generateSelfDeclarationForm = async (candidateData, employeeSignatu
   const margin = 15;
   let y = 15;
   
-  // Header
+
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
   doc.text('SELF DECLARATION FORM', pageWidth / 2, y, { align: 'center' });
@@ -1103,7 +1103,7 @@ export const generateSelfDeclarationForm = async (candidateData, employeeSignatu
   
   const fullName = profile.fullName || [profile.firstName, profile.middleName, profile.lastName].filter(Boolean).join(' ') || '';
   
-  // Employee Details
+
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
   doc.setFillColor(240, 240, 240);
@@ -1127,7 +1127,7 @@ export const generateSelfDeclarationForm = async (candidateData, employeeSignatu
   addRow('Aadhaar Number', profile.aadhaarNumber || profile.aadharNumber || joining.aadhaarNumber);
   addRow('PAN Number', profile.panNumber || joining.panNumber);
   
-  // Previous Employment
+
   y += 5;
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
@@ -1141,7 +1141,7 @@ export const generateSelfDeclarationForm = async (candidateData, employeeSignatu
   addRow('Employment Period', decl.employmentPeriod || 'N/A');
   addRow('Reason for Leaving', decl.reasonForLeaving || 'N/A');
   
-  // Declaration Section
+
   y += 5;
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
@@ -1176,7 +1176,7 @@ export const generateSelfDeclarationForm = async (candidateData, employeeSignatu
     y += 4;
   });
   
-  // Signature section
+
   y += 10;
   doc.setFont('helvetica', 'normal');
   doc.text('Place: ' + (decl.place || profile.currentCity || profile.city || '____________'), margin, y);
@@ -1189,7 +1189,7 @@ export const generateSelfDeclarationForm = async (candidateData, employeeSignatu
   const rawSig = employeeSignature || profile.signature || decl.employeeSignature;
   if (rawSig) {
     try {
-      // Process signature for dark mode
+
       const sig = await processSignatureForPDF(rawSig);
       if (sig) {
         doc.addImage(sig, 'PNG', margin, y + 3, 40, 15);
@@ -1206,19 +1206,19 @@ export const generateSelfDeclarationForm = async (candidateData, employeeSignatu
   return doc.output('arraybuffer');
 };
 
-// ============================================================================
-// UTILITY FUNCTIONS
-// ============================================================================
 
-// View PDF in new browser tab
+
+
+
+
 const viewPDF = (pdfBytes) => {
   const blob = new Blob([pdfBytes], { type: 'application/pdf' });
   const url = URL.createObjectURL(blob);
   
-  // Try to open in new tab, fallback to download if popup is blocked
+
   const newWindow = window.open(url, '_blank');
   if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-    // Popup was blocked - fallback to download
+
     console.log('Popup blocked, downloading instead');
     const link = document.createElement('a');
     link.href = url;
@@ -1231,7 +1231,7 @@ const viewPDF = (pdfBytes) => {
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 };
 
-// Download PDF file
+
 const downloadPDF = (pdfBytes, filename) => {
   const blob = new Blob([pdfBytes], { type: 'application/pdf' });
   const url = URL.createObjectURL(blob);
@@ -1244,13 +1244,13 @@ const downloadPDF = (pdfBytes, filename) => {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
 
-// View Form PDF (opens in new tab) - main export function
+
 export const viewFormPDF = async (formId, profileData, adminSignature) => {
   try {
     const candidateData = { profileData };
     
-    // Look for employee signature in multiple locations
-    // The signature might be stored in different places depending on which form was filled
+
+
     const employeeSignature = 
       profileData.signature || 
       profileData.form11Signature ||
@@ -1309,12 +1309,12 @@ export const viewFormPDF = async (formId, profileData, adminSignature) => {
   }
 };
 
-// Download Form PDF - main export function
+
 export const downloadFormPDF = async (formId, profileData, candidateName, adminSignature) => {
   try {
     const candidateData = { profileData };
     
-    // Look for employee signature in multiple locations
+
     const employeeSignature = 
       profileData.signature || 
       profileData.form11Signature ||
@@ -1371,11 +1371,11 @@ export const downloadFormPDF = async (formId, profileData, candidateName, adminS
   }
 };
 
-// Generate all forms at once
+
 export const generateAllForms = async (candidateData, adminSignature) => {
   const profile = candidateData.profileData || candidateData || {};
   
-  // Look for employee signature in multiple locations
+
   const employeeSignature = 
     profile.signature || 
     profile.form11Signature ||

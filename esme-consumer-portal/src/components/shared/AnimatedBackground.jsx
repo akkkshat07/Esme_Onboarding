@@ -6,12 +6,12 @@ export default function AnimatedBackground({ children }) {
 
   return (
     <div className={`min-h-screen relative ${isDark ? 'animated-bg-dark' : 'animated-bg-light'}`}>
-      {/* Floating Orbs */}
+      {}
       <div className="floating-orb orb-1" />
       <div className="floating-orb orb-2" />
       <div className="floating-orb orb-3" />
       
-      {/* Grid Pattern Overlay */}
+      {}
       <div 
         className={`fixed inset-0 pointer-events-none z-0 ${isDark ? 'opacity-[0.03]' : 'opacity-[0.02]'}`}
         style={{
@@ -23,7 +23,7 @@ export default function AnimatedBackground({ children }) {
         }}
       />
       
-      {/* Content */}
+      {}
       <div className="relative z-10">
         {children}
       </div>

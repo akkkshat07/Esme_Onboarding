@@ -4,20 +4,20 @@ const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
   const [isDark, setIsDark] = useState(() => {
-    // Check localStorage first
+
     const saved = localStorage.getItem('theme-preference');
     if (saved) {
       return saved === 'dark';
     }
-    // Check system preference
+
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
 
   useEffect(() => {
-    // Save to localStorage
+
     localStorage.setItem('theme-preference', isDark ? 'dark' : 'light');
     
-    // Update DOM
+
     if (isDark) {
       document.documentElement.classList.add('dark');
     } else {
@@ -25,12 +25,12 @@ export const ThemeProvider = ({ children }) => {
     }
   }, [isDark]);
 
-  // Listen for system theme changes
+
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = (e) => {
       const saved = localStorage.getItem('theme-preference');
-      // Only auto-switch if user hasn't set preference
+
       if (!saved) {
         setIsDark(e.matches);
       }

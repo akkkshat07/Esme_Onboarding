@@ -3,23 +3,19 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { ChevronRight, ChevronLeft, Info, User, Briefcase, FileText } from 'lucide-react';
 import SignatureCapture from './SignatureCapture';
 
-/**
- * Form 11 - PF Declaration Form
- * Declaration by a person taking up employment in any establishment
- * on which EPF Scheme, 1952 and EPS, 1995 is applicable
- */
+
 export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
   const { isDark } = useTheme();
   
-  // Helper to get value from any previous form
+
   const getValue = (key, ...fallbacks) => {
-    // Check direct formData first
+
     if (formData[key]) return formData[key];
-    // Check joiningFormData
+
     if (formData.joiningFormData?.[key]) return formData.joiningFormData[key];
-    // Check formFData
+
     if (formData.formFData?.[key]) return formData.formFData[key];
-    // Check fallback keys
+
     for (const fb of fallbacks) {
       if (formData[fb]) return formData[fb];
       if (formData.joiningFormData?.[fb]) return formData.joiningFormData[fb];
@@ -28,9 +24,9 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
     return '';
   };
   
-  // Form 11 specific state
+
   const [form11Data, setForm11Data] = useState({
-    // Personal Details
+
     fullName: getValue('fullName'),
     fatherName: getValue('fatherName'),
     dateOfBirth: getValue('dateOfBirth'),
@@ -39,34 +35,34 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
     mobileNumber: getValue('mobileNumber'),
     email: getValue('email', 'personalEmail'),
     
-    // Educational Qualification
+
     education: getValue('education', 'highestQualification', 'qualification'),
     
-    // Specially Abled
+
     speciallyAbled: getValue('speciallyAbled') || 'no',
     disabilityType: getValue('disabilityType'),
     
-    // Current Employer Details
+
     currentEmployerName: getValue('currentEmployerName', 'employerName') || 'ESME Consumer Pvt Ltd',
     dateOfJoining: getValue('dateOfJoining'),
     
-    // Address as per Aadhaar
+
     permanentAddress: getValue('permanentAddress'),
     permanentCity: getValue('permanentCity'),
     permanentState: getValue('permanentState'),
     permanentPincode: getValue('permanentPincode'),
     
-    // Identity Details
+
     aadhaarNumber: getValue('aadhaarNumber'),
     panNumber: getValue('panNumber'),
     uanNumber: getValue('uanNumber'),
     
-    // Bank Details
+
     bankAccountNumber: getValue('bankAccountNumber', 'accountNumber'),
     ifscCode: getValue('ifscCode'),
     bankName: getValue('bankName'),
     
-    // Previous Employment PF Details
+
     hasPreviousEmployment: getValue('hasPreviousEmployment') || false,
     previousPFMember: getValue('previousPFMember') || false,
     previousPensionMember: getValue('previousPensionMember') || false,
@@ -76,7 +72,7 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
     schemeClaimSettled: getValue('schemeClaimSettled'),
     pfClaimSettled: getValue('pfClaimSettled'),
     
-    // Pension Scheme Details
+
     pensionClaimReceived: getValue('pensionClaimReceived') || false,
     internationalWorker: getValue('internationalWorker') || false,
     passportNumber: getValue('passportNumber'),
@@ -84,25 +80,25 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
     passportValidityTo: getValue('passportValidity', 'passportValidityTo'),
     countryOfOrigin: getValue('countryOfOrigin') || 'India',
     
-    // EPF/EPS Scheme Options
+
     optForEPS: formData.optForEPS !== undefined ? formData.optForEPS : true,
     optForHigherPension: getValue('optForHigherPension') || false,
     
-    // Nominee Details (from FormF or joiningForm)
+
     nomineeName: getValue('nomineeName') || formData.formFData?.nominees?.[0]?.name || formData.formF_nominees?.[0]?.name || '',
     nomineeRelationship: getValue('nomineeRelationship') || formData.formFData?.nominees?.[0]?.relationship || formData.formF_nominees?.[0]?.relationship || '',
     nomineeAddress: getValue('nomineeAddress') || formData.formFData?.nominees?.[0]?.address || formData.formF_nominees?.[0]?.address || '',
     nomineeDateOfBirth: getValue('nomineeDateOfBirth'),
     nomineeAadhaar: getValue('nomineeAadhaar'),
     
-    // Declaration
+
     declarationAccepted: getValue('form11DeclarationAccepted') || false,
     declarationDate: new Date().toISOString().split('T')[0],
     declarationPlace: getValue('currentCity'),
     employeeSignature: getValue('form11Signature', 'employeeSignature')
   });
 
-  // Sync with parent formData on mount
+
   useEffect(() => {
     if (formData.form11Data) {
       setForm11Data(prev => ({ ...prev, ...formData.form11Data }));
@@ -180,7 +176,7 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      {/* Header */}
+      {}
       <div className={`p-4 rounded-xl ${isDark ? 'bg-purple-900/20 border border-purple-800' : 'bg-purple-50 border border-purple-200'}`}>
         <div className="flex items-start gap-3">
           <Info className={`mt-0.5 ${isDark ? 'text-purple-400' : 'text-purple-600'}`} size={20} />
@@ -196,7 +192,7 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
         </div>
       </div>
 
-      {/* Personal Details */}
+      {}
       <div className={sectionClass}>
         <SectionTitle icon={User} title="Personal Details" />
         <div className="grid md:grid-cols-3 gap-4">
@@ -290,7 +286,7 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
             />
           </div>
           
-          {/* Educational Qualification */}
+          {}
           <div>
             <label className={labelClass}>Educational Qualification *</label>
             <select
@@ -312,7 +308,7 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
             </select>
           </div>
           
-          {/* Specially Abled */}
+          {}
           <div>
             <label className={labelClass}>Are you Specially Abled?</label>
             <select
@@ -346,7 +342,7 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
         </div>
       </div>
 
-      {/* Address Details */}
+      {}
       <div className={sectionClass}>
         <SectionTitle icon={User} title="Permanent Address (As per Aadhaar)" />
         <div className="grid md:grid-cols-2 gap-4">
@@ -402,7 +398,7 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
         </div>
       </div>
 
-      {/* Employment Details */}
+      {}
       <div className={sectionClass}>
         <SectionTitle icon={Briefcase} title="Present Employment Details" />
         <div className="grid md:grid-cols-2 gap-4">
@@ -432,7 +428,7 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
         </div>
       </div>
 
-      {/* KYC Details */}
+      {}
       <div className={sectionClass}>
         <SectionTitle icon={FileText} title="KYC Details" />
         <div className="grid md:grid-cols-3 gap-4">
@@ -500,7 +496,7 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
         </div>
       </div>
 
-      {/* Previous Employment PF Details */}
+      {}
       <div className={sectionClass}>
         <SectionTitle icon={Briefcase} title="Previous Employment Details (EPF/EPS)" />
         
@@ -611,7 +607,7 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
         </div>
       </div>
 
-      {/* International Worker Details */}
+      {}
       <div className={sectionClass}>
         <SectionTitle icon={User} title="International Worker Details" />
         <div className="space-y-4">
@@ -675,7 +671,7 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
         </div>
       </div>
 
-      {/* EPF/EPS Options */}
+      {}
       <div className={sectionClass}>
         <SectionTitle icon={FileText} title="EPF/EPS Scheme Options" />
         <div className="space-y-4">
@@ -697,7 +693,7 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
         </div>
       </div>
 
-      {/* Nominee Details for EPS */}
+      {}
       {form11Data.optForEPS && (
         <div className={sectionClass}>
           <SectionTitle icon={User} title="Nominee Details (For EPS)" />
@@ -768,7 +764,7 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
         </div>
       )}
 
-      {/* Declaration */}
+      {}
       <div className={`p-6 rounded-xl border ${isDark ? 'bg-amber-900/20 border-amber-800' : 'bg-amber-50 border-amber-200'}`}>
         <h4 className={`text-lg font-semibold mb-4 ${isDark ? 'text-amber-300' : 'text-amber-800'}`}>
           Declaration
@@ -816,7 +812,7 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
           <span className="text-sm font-medium">I accept the above declaration *</span>
         </label>
         
-        {/* Employee Signature */}
+        {}
         <SignatureCapture
           label="Employee Signature"
           value={form11Data.employeeSignature}
@@ -825,7 +821,7 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
         />
       </div>
 
-      {/* Navigation Buttons */}
+      {}
       <div className="flex justify-between pt-4">
         <button
           type="button"

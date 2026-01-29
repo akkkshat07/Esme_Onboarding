@@ -24,11 +24,11 @@ export const ALLOWED_FILE_TYPES = {
 };
 
 export const FILE_SIZE_LIMITS = {
-  pdf: 10 * 1024 * 1024, // 10MB
-  image: 5 * 1024 * 1024  // 5MB
+  pdf: 10 * 1024 * 1024,
+  image: 5 * 1024 * 1024 
 };
 
-// These 6 forms are auto-generated from user inputs - NOT uploaded manually
+
 export const AUTO_GENERATED_FORMS = [
   { id: 'joining_form', name: 'Employee Joining Form', required: true },
   { id: 'form_f', name: 'Gratuity Form F', required: true },
@@ -38,7 +38,7 @@ export const AUTO_GENERATED_FORMS = [
   { id: 'self_declaration', name: 'Self Declaration Form', required: true }
 ];
 
-// Documents that still need to be uploaded manually
+
 export const REQUIRED_DOCUMENTS = {
   identity: [
     { id: 'aadhaar_card', name: 'Aadhaar Card (Front & Back)', required: true },

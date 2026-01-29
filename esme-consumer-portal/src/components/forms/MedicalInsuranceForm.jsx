@@ -3,26 +3,23 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { ChevronRight, ChevronLeft, Info, User, Heart, Plus, Trash2 } from 'lucide-react';
 import SignatureCapture from './SignatureCapture';
 
-/**
- * Medical Insurance Form
- * Group Health Insurance enrollment form for employee and dependents
- */
+
 export default function MedicalInsuranceForm({ formData, onFormDataChange, onNext, onBack }) {
   const { isDark } = useTheme();
   
-  // Helper to get value from any previous form
+
   const getValue = (key, ...fallbacks) => {
-    // Check direct formData first
+
     if (formData[key]) return formData[key];
-    // Check joiningFormData
+
     if (formData.joiningFormData?.[key]) return formData.joiningFormData[key];
-    // Check formFData
+
     if (formData.formFData?.[key]) return formData.formFData[key];
-    // Check form11Data
+
     if (formData.form11Data?.[key]) return formData.form11Data[key];
-    // Check pfNominationData
+
     if (formData.pfNominationData?.[key]) return formData.pfNominationData[key];
-    // Check fallback keys
+
     for (const fb of fallbacks) {
       if (formData[fb]) return formData[fb];
       if (formData.joiningFormData?.[fb]) return formData.joiningFormData[fb];
@@ -33,9 +30,9 @@ export default function MedicalInsuranceForm({ formData, onFormDataChange, onNex
     return '';
   };
   
-  // Medical Insurance Form specific state
+
   const [insuranceData, setInsuranceData] = useState({
-    // Employee Details (pre-filled from all previous forms)
+
     employeeName: getValue('fullName'),
     employeeCode: getValue('employeeCode'),
     dateOfBirth: getValue('dateOfBirth'),
@@ -46,53 +43,53 @@ export default function MedicalInsuranceForm({ formData, onFormDataChange, onNex
     department: getValue('department'),
     designation: getValue('designation', 'profession'),
     
-    // Address
+
     permanentAddress: getValue('permanentAddress'),
     permanentCity: getValue('permanentCity'),
     permanentState: getValue('permanentState'),
     permanentPincode: getValue('permanentPincode'),
     
-    // Emergency Contact (from joining form)
+
     emergencyContactName: getValue('emergencyContactName'),
     emergencyContactRelation: getValue('emergencyContactRelation'),
     emergencyContactMobile: getValue('emergencyContactMobile', 'emergencyContactNumber'),
     
-    // Coverage Type
-    coverageType: getValue('coverageType') || 'self', // 'self', 'self_spouse', 'family'
+
+    coverageType: getValue('coverageType') || 'self',
     
-    // Spouse Details (if applicable)
+
     includeSpouse: getValue('includeSpouse') || false,
     spouseName: getValue('spouseName'),
     spouseDateOfBirth: getValue('spouseDateOfBirth'),
     spouseGender: getValue('spouseGender'),
     
-    // Children Details (if applicable)
+
     includeChildren: getValue('includeChildren') || false,
     children: formData.insuranceChildren || [
       { name: '', dateOfBirth: '', gender: '' }
     ],
     
-    // Parents Details (if applicable)
+
     includeParents: getValue('includeParents') || false,
     parents: formData.insuranceParents || [
       { name: getValue('fatherName'), relationship: 'Father', dateOfBirth: '', gender: 'M' },
       { name: getValue('motherName'), relationship: 'Mother', dateOfBirth: '', gender: 'F' }
     ],
     
-    // Medical History
+
     hasPreExistingCondition: getValue('hasPreExistingCondition') || false,
     preExistingConditionDetails: getValue('preExistingConditionDetails'),
     hasOngoingTreatment: getValue('hasOngoingTreatment') || false,
     ongoingTreatmentDetails: getValue('ongoingTreatmentDetails'),
     
-    // Declaration
+
     declarationAccepted: getValue('insuranceDeclarationAccepted') || false,
     declarationDate: new Date().toISOString().split('T')[0],
     declarationPlace: getValue('currentCity'),
     employeeSignature: getValue('insuranceSignature', 'employeeSignature', 'pfNominationSignature', 'form11Signature')
   });
 
-  // Sync with parent formData on mount
+
   useEffect(() => {
     if (formData.insuranceData) {
       setInsuranceData(prev => ({ ...prev, ...formData.insuranceData }));
@@ -105,7 +102,7 @@ export default function MedicalInsuranceForm({ formData, onFormDataChange, onNex
     setInsuranceData(prev => ({ ...prev, [name]: newValue }));
   };
 
-  // Children handlers
+
   const handleChildChange = (index, field, value) => {
     const updated = [...insuranceData.children];
     updated[index] = { ...updated[index], [field]: value };
@@ -128,7 +125,7 @@ export default function MedicalInsuranceForm({ formData, onFormDataChange, onNex
     }
   };
 
-  // Parents handlers
+
   const handleParentChange = (index, field, value) => {
     const updated = [...insuranceData.parents];
     updated[index] = { ...updated[index], [field]: value };
@@ -136,13 +133,13 @@ export default function MedicalInsuranceForm({ formData, onFormDataChange, onNex
   };
 
   const validateForm = () => {
-    // Basic validation
+
     if (!insuranceData.employeeName || !insuranceData.dateOfBirth) {
       alert('Please fill in all required employee details');
       return false;
     }
     
-    // Spouse validation if included
+
     if (insuranceData.includeSpouse) {
       if (!insuranceData.spouseName || !insuranceData.spouseDateOfBirth) {
         alert('Please fill in spouse details');
@@ -203,7 +200,7 @@ export default function MedicalInsuranceForm({ formData, onFormDataChange, onNex
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      {/* Header */}
+      {}
       <div className={`p-4 rounded-xl ${isDark ? 'bg-rose-900/20 border border-rose-800' : 'bg-rose-50 border border-rose-200'}`}>
         <div className="flex items-start gap-3">
           <Info className={`mt-0.5 ${isDark ? 'text-rose-400' : 'text-rose-600'}`} size={20} />
@@ -219,7 +216,7 @@ export default function MedicalInsuranceForm({ formData, onFormDataChange, onNex
         </div>
       </div>
 
-      {/* Employee Details */}
+      {}
       <div className={sectionClass}>
         <SectionTitle icon={User} title="Employee Details" />
         <div className="grid md:grid-cols-3 gap-4">
@@ -325,7 +322,7 @@ export default function MedicalInsuranceForm({ formData, onFormDataChange, onNex
           </div>
         </div>
         
-        {/* Address */}
+        {}
         <div className="mt-4">
           <label className={labelClass}>Permanent Address</label>
           <textarea
@@ -366,7 +363,7 @@ export default function MedicalInsuranceForm({ formData, onFormDataChange, onNex
         </div>
       </div>
 
-      {/* Emergency Contact */}
+      {}
       <div className={sectionClass}>
         <SectionTitle icon={Heart} title="Emergency Contact" />
         <div className="grid md:grid-cols-3 gap-4">
@@ -416,12 +413,12 @@ export default function MedicalInsuranceForm({ formData, onFormDataChange, onNex
         </div>
       </div>
 
-      {/* Coverage Selection */}
+      {}
       <div className={sectionClass}>
         <SectionTitle icon={Heart} title="Coverage Selection" subtitle="Select family members to include in the health insurance coverage" />
         
         <div className="space-y-4">
-          {/* Spouse */}
+          {}
           <div className={`p-4 rounded-lg border ${isDark ? 'bg-slate-700/30 border-slate-600' : 'bg-white border-slate-200'}`}>
             <label className={`flex items-center gap-2 cursor-pointer ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
               <input
@@ -476,7 +473,7 @@ export default function MedicalInsuranceForm({ formData, onFormDataChange, onNex
             )}
           </div>
 
-          {/* Children */}
+          {}
           <div className={`p-4 rounded-lg border ${isDark ? 'bg-slate-700/30 border-slate-600' : 'bg-white border-slate-200'}`}>
             <label className={`flex items-center gap-2 cursor-pointer ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
               <input
@@ -561,7 +558,7 @@ export default function MedicalInsuranceForm({ formData, onFormDataChange, onNex
             )}
           </div>
 
-          {/* Parents */}
+          {}
           <div className={`p-4 rounded-lg border ${isDark ? 'bg-slate-700/30 border-slate-600' : 'bg-white border-slate-200'}`}>
             <label className={`flex items-center gap-2 cursor-pointer ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
               <input
@@ -621,7 +618,7 @@ export default function MedicalInsuranceForm({ formData, onFormDataChange, onNex
         </div>
       </div>
 
-      {/* Medical History */}
+      {}
       <div className={sectionClass}>
         <SectionTitle icon={Heart} title="Medical History Declaration" />
         
@@ -682,7 +679,7 @@ export default function MedicalInsuranceForm({ formData, onFormDataChange, onNex
         </div>
       </div>
 
-      {/* Declaration */}
+      {}
       <div className={`p-6 rounded-xl border ${isDark ? 'bg-amber-900/20 border-amber-800' : 'bg-amber-50 border-amber-200'}`}>
         <h4 className={`text-lg font-semibold mb-4 ${isDark ? 'text-amber-300' : 'text-amber-800'}`}>
           Declaration
@@ -731,7 +728,7 @@ export default function MedicalInsuranceForm({ formData, onFormDataChange, onNex
           <span className="text-sm font-medium">I accept the above declaration *</span>
         </label>
         
-        {/* Employee Signature */}
+        {}
         <SignatureCapture
           label="Employee Signature"
           value={insuranceData.employeeSignature}
@@ -740,7 +737,7 @@ export default function MedicalInsuranceForm({ formData, onFormDataChange, onNex
         />
       </div>
 
-      {/* Navigation Buttons */}
+      {}
       <div className="flex justify-between pt-4">
         <button
           type="button"

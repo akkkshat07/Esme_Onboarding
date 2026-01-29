@@ -32,7 +32,7 @@ export default function AuthForm({ onAuthSuccess }) {
     setError('');
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
 
     try {
       let url = isSignup ? `${API_URL}/signup` : `${API_URL}/login`;
@@ -151,7 +151,7 @@ export default function AuthForm({ onAuthSuccess }) {
       </div>
 
       <div className={`w-full lg:w-1/2 ${isDark ? 'bg-slate-800' : 'bg-slate-50'} flex items-center justify-center p-8 relative transition-colors duration-300`}>
-        {/* Dark Mode Toggle */}
+        {}
         <button
           onClick={toggleTheme}
           className={`absolute top-6 right-6 p-2 rounded-lg transition-colors ${isDark ? 'bg-slate-700 text-yellow-400 hover:bg-slate-600' : 'bg-gray-200 text-slate-700 hover:bg-gray-300'}`}

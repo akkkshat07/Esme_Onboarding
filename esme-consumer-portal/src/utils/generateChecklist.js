@@ -7,7 +7,7 @@ export const generateChecklistPDF = async (candidate) => {
   const margin = 15;
   const colWidth = (pageWidth - 2 * margin) / 2;
 
-  // Header
+
   doc.setFillColor(30, 70, 120);
   doc.rect(0, 0, pageWidth, 35, 'F');
   
@@ -25,7 +25,7 @@ export const generateChecklistPDF = async (candidate) => {
 
   yPosition = 45;
 
-  // Candidate Info Box
+
   doc.setFillColor(245, 247, 250);
   doc.rect(margin, yPosition, pageWidth - 2 * margin, 30, 'F');
   doc.setDrawColor(200, 210, 220);
@@ -79,7 +79,7 @@ export const generateChecklistPDF = async (candidate) => {
 
   yPosition += 18;
 
-  // Documents checklist
+
   const documents = [
     { name: 'Employee Joining Form', required: true },
     { name: 'PF Form 11', required: true },
@@ -99,10 +99,10 @@ export const generateChecklistPDF = async (candidate) => {
     { name: 'Previous Employment Relieving Letter', required: false }
   ];
 
-  // Check which documents are uploaded
+
   const uploadedDocs = candidate.documents?.map(d => d.type.toLowerCase()) || [];
   
-  // Section header
+
   doc.setFillColor(30, 70, 120);
   doc.rect(margin, yPosition, pageWidth - 2 * margin, 7, 'F');
   doc.setFontSize(10);
@@ -111,7 +111,7 @@ export const generateChecklistPDF = async (candidate) => {
   doc.text('DOCUMENTS CHECKLIST', margin + 5, yPosition + 5);
   yPosition += 12;
 
-  // Table header
+
   doc.setFillColor(240, 242, 245);
   doc.rect(margin, yPosition, pageWidth - 2 * margin, 7, 'F');
   doc.setFontSize(8);
@@ -124,7 +124,7 @@ export const generateChecklistPDF = async (candidate) => {
   doc.text('Verified', margin + 152, yPosition + 5);
   yPosition += 10;
 
-  // Document rows
+
   doc.setFont(undefined, 'normal');
   doc.setTextColor(30, 40, 50);
   
@@ -134,7 +134,7 @@ export const generateChecklistPDF = async (candidate) => {
       yPosition = 20;
     }
 
-    // Alternate row colors
+
     if (index % 2 === 0) {
       doc.setFillColor(250, 251, 252);
       doc.rect(margin, yPosition - 3, pageWidth - 2 * margin, 7, 'F');
@@ -145,13 +145,13 @@ export const generateChecklistPDF = async (candidate) => {
     doc.text(docItem.name, margin + 15, yPosition);
     doc.text(docItem.required ? 'Yes' : 'No', margin + 105, yPosition);
     
-    // Check if document is uploaded
+
     const docKey = docItem.name.toLowerCase().replace(/\s+/g, '_');
     const isUploaded = uploadedDocs.some(d => 
       d.includes(docKey.substring(0, 8)) || docKey.includes(d.substring(0, 8))
     );
     
-    // Checkbox for submitted
+
     doc.rect(margin + 130, yPosition - 3, 4, 4);
     if (isUploaded) {
       doc.setFontSize(10);
@@ -159,7 +159,7 @@ export const generateChecklistPDF = async (candidate) => {
       doc.setFontSize(8);
     }
     
-    // Checkbox for verified (empty - to be filled by admin)
+
     doc.rect(margin + 157, yPosition - 3, 4, 4);
 
     yPosition += 8;
@@ -167,7 +167,7 @@ export const generateChecklistPDF = async (candidate) => {
 
   yPosition += 10;
 
-  // Signatures section
+
   if (yPosition > pageHeight - 60) {
     doc.addPage();
     yPosition = 20;
@@ -185,7 +185,7 @@ export const generateChecklistPDF = async (candidate) => {
   doc.setTextColor(30, 40, 50);
   doc.setFont(undefined, 'normal');
 
-  // Candidate Name (instead of signature)
+
   doc.setFont(undefined, 'bold');
   doc.text('Candidate Name:', margin, yPosition);
   doc.setFont(undefined, 'normal');
@@ -200,7 +200,7 @@ export const generateChecklistPDF = async (candidate) => {
   doc.text(submittedDate, margin + 130, yPosition);
   yPosition += 12;
 
-  // HR Verification
+
   doc.setFont(undefined, 'bold');
   doc.text('Verified By HR:', margin, yPosition);
   doc.setFont(undefined, 'normal');
@@ -215,25 +215,25 @@ export const generateChecklistPDF = async (candidate) => {
   doc.text(approvedDate, margin + 130, yPosition);
   yPosition += 12;
 
-  // Employee ID
+
   doc.setFont(undefined, 'bold');
   doc.text('Employee ID:', margin, yPosition);
   doc.setFont(undefined, 'normal');
   doc.text(candidate.employeeId || '________________________', margin + 35, yPosition);
   yPosition += 12;
 
-  // Remarks
+
   doc.setFont(undefined, 'bold');
   doc.text('HR Remarks:', margin, yPosition);
   doc.setFont(undefined, 'normal');
   const remarks = candidate.hrRemarks || '________________________';
-  // Handle long remarks by splitting into lines
+
   const maxRemarkWidth = pageWidth - margin - 35;
   const remarkLines = doc.splitTextToSize(remarks, maxRemarkWidth);
   doc.text(remarkLines, margin + 30, yPosition);
   yPosition += (remarkLines.length * 5) + 5;
 
-  // Footer
+
   const footerY = pageHeight - 10;
   doc.setFontSize(7);
   doc.setTextColor(120, 130, 140);

@@ -2,21 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { ChevronRight, ChevronLeft, Plus, Trash2, Info } from 'lucide-react';
 
-/**
- * Form F - Gratuity Nomination Form
- * Based on THE PAYMENT OF GRATUITY (CENTRAL) RULES, 1972
- * FORM 'F' - Nomination under Rule 6(1)
- */
+
 export default function FormF({ formData, onFormDataChange, onNext, onBack }) {
   const { isDark } = useTheme();
   
-  // Helper to get value from any previous form
+
   const getValue = (key, ...fallbacks) => {
-    // Check direct formData first
+
     if (formData[key]) return formData[key];
-    // Check joiningFormData
+
     if (formData.joiningFormData?.[key]) return formData.joiningFormData[key];
-    // Check fallback keys
+
     for (const fb of fallbacks) {
       if (formData[fb]) return formData[fb];
       if (formData.joiningFormData?.[fb]) return formData.joiningFormData[fb];
@@ -24,9 +20,9 @@ export default function FormF({ formData, onFormDataChange, onNext, onBack }) {
     return '';
   };
   
-  // Form F specific state
+
   const [formFData, setFormFData] = useState({
-    // Employee Details (pre-filled from formData and joiningFormData)
+
     employeeName: getValue('fullName'),
     sex: getValue('gender') === 'M' ? 'Male' : getValue('gender') === 'F' ? 'Female' : getValue('gender') === 'T' ? 'Transgender' : getValue('gender'),
     religion: getValue('religion'),
@@ -36,7 +32,7 @@ export default function FormF({ formData, onFormDataChange, onNext, onBack }) {
     dateOfJoining: getValue('dateOfJoining'),
     permanentAddress: getValue('permanentAddress'),
     
-    // Address fields for PDF form (Village, Thana, etc.)
+
     village: getValue('village'),
     thana: getValue('thana'),
     subdivision: getValue('subdivision'),
@@ -44,7 +40,7 @@ export default function FormF({ formData, onFormDataChange, onNext, onBack }) {
     district: getValue('district', 'currentDistrict', 'permanentCity'),
     state: getValue('state', 'currentState', 'permanentState'),
     
-    // Nominees array - for gratuity nomination
+
     nominees: formData.formF_nominees || formData.joiningFormData?.formF_nominees || [
       {
         name: getValue('nomineeName', 'emergencyContactName'),
@@ -55,15 +51,15 @@ export default function FormF({ formData, onFormDataChange, onNext, onBack }) {
       }
     ],
     
-    // If employee has family
+
     hasFamily: getValue('maritalStatus') === 'Married' ? 'yes' : '',
     
-    // Date and place
+
     nominationDate: new Date().toISOString().split('T')[0],
     place: getValue('currentCity')
   });
 
-  // Sync with parent formData on mount
+
   useEffect(() => {
     if (formData.formFData) {
       setFormFData(prev => ({ ...prev, ...formData.formFData }));
@@ -98,20 +94,20 @@ export default function FormF({ formData, onFormDataChange, onNext, onBack }) {
   };
 
   const validateForm = () => {
-    // Check required fields
+
     if (!formFData.employeeName || !formFData.sex || !formFData.maritalStatus) {
       alert('Please fill in all required employee details');
       return false;
     }
     
-    // Check if nominees are filled
+
     const validNominees = formFData.nominees.filter(n => n.name && n.relationship);
     if (validNominees.length === 0) {
       alert('Please add at least one nominee');
       return false;
     }
     
-    // Check total share percentage
+
     const totalShare = formFData.nominees.reduce((sum, n) => sum + (parseFloat(n.sharePercent) || 0), 0);
     if (totalShare !== 100) {
       alert(`Total share percentage must equal 100%. Current total: ${totalShare}%`);
@@ -123,12 +119,12 @@ export default function FormF({ formData, onFormDataChange, onNext, onBack }) {
 
   const handleNext = () => {
     if (validateForm()) {
-      // Save Form F data to parent formData
+
       onFormDataChange({
         ...formData,
         formFData: formFData,
         formF_nominees: formFData.nominees,
-        // Also update common fields that might be used in other forms
+
         religion: formFData.religion,
         department: formFData.department
       });
@@ -148,7 +144,7 @@ export default function FormF({ formData, onFormDataChange, onNext, onBack }) {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      {/* Header */}
+      {}
       <div className={`p-4 rounded-xl ${isDark ? 'bg-indigo-900/20 border border-indigo-800' : 'bg-indigo-50 border border-indigo-200'}`}>
         <div className="flex items-start gap-3">
           <Info className={`mt-0.5 ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`} size={20} />
@@ -164,7 +160,7 @@ export default function FormF({ formData, onFormDataChange, onNext, onBack }) {
         </div>
       </div>
 
-      {/* Employee Details Section */}
+      {}
       <div className={sectionClass}>
         <h4 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
           Employee Details
@@ -293,7 +289,7 @@ export default function FormF({ formData, onFormDataChange, onNext, onBack }) {
             />
           </div>
           
-          {/* Address Details for PDF Form */}
+          {}
           <div>
             <label className={labelClass}>Village/Town</label>
             <input
@@ -368,7 +364,7 @@ export default function FormF({ formData, onFormDataChange, onNext, onBack }) {
         </div>
       </div>
 
-      {/* Nominees Section */}
+      {}
       <div className={sectionClass}>
         <div className="flex justify-between items-center mb-4">
           <h4 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
@@ -494,7 +490,7 @@ export default function FormF({ formData, onFormDataChange, onNext, onBack }) {
           </div>
         ))}
         
-        {/* Share percentage indicator */}
+        {}
         <div className={`p-3 rounded-lg ${
           formFData.nominees.reduce((sum, n) => sum + (parseFloat(n.sharePercent) || 0), 0) === 100
             ? isDark ? 'bg-green-900/20 text-green-400' : 'bg-green-50 text-green-700'
@@ -505,7 +501,7 @@ export default function FormF({ formData, onFormDataChange, onNext, onBack }) {
         </div>
       </div>
 
-      {/* Place and Date */}
+      {}
       <div className={sectionClass}>
         <div className="grid md:grid-cols-2 gap-4">
           <div>
@@ -532,7 +528,7 @@ export default function FormF({ formData, onFormDataChange, onNext, onBack }) {
         </div>
       </div>
 
-      {/* Navigation Buttons */}
+      {}
       <div className="flex justify-between pt-4">
         <button
           type="button"

@@ -3,25 +3,21 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { ChevronRight, ChevronLeft, Info, User, Plus, Trash2 } from 'lucide-react';
 import SignatureCapture from './SignatureCapture';
 
-/**
- * PF Nomination Form
- * Form for nominating beneficiaries for Provident Fund benefits
- * As per Para 61 of EPF Scheme, 1952 read with Para 18 of EPS, 1995
- */
+
 export default function PFNominationForm({ formData, onFormDataChange, onNext, onBack }) {
   const { isDark } = useTheme();
   
-  // Helper to get value from any previous form
+
   const getValue = (key, ...fallbacks) => {
-    // Check direct formData first
+
     if (formData[key]) return formData[key];
-    // Check joiningFormData
+
     if (formData.joiningFormData?.[key]) return formData.joiningFormData[key];
-    // Check formFData
+
     if (formData.formFData?.[key]) return formData.formFData[key];
-    // Check form11Data
+
     if (formData.form11Data?.[key]) return formData.form11Data[key];
-    // Check fallback keys
+
     for (const fb of fallbacks) {
       if (formData[fb]) return formData[fb];
       if (formData.joiningFormData?.[fb]) return formData.joiningFormData[fb];
@@ -31,9 +27,9 @@ export default function PFNominationForm({ formData, onFormDataChange, onNext, o
     return '';
   };
   
-  // Get nominees from previous forms
+
   const getPreviousNominees = () => {
-    // First try form11Data nominees
+
     if (formData.form11Data?.nomineeName) {
       return [{
         name: formData.form11Data.nomineeName || '',
@@ -46,7 +42,7 @@ export default function PFNominationForm({ formData, onFormDataChange, onNext, o
         guardianAddress: ''
       }];
     }
-    // Then try FormF nominees
+
     if (formData.formFData?.nominees?.length > 0) {
       return formData.formFData.nominees.map(n => ({
         name: n.name || '',
@@ -59,7 +55,7 @@ export default function PFNominationForm({ formData, onFormDataChange, onNext, o
         guardianAddress: ''
       }));
     }
-    // Then try formF_nominees array
+
     if (formData.formF_nominees?.length > 0) {
       return formData.formF_nominees.map(n => ({
         name: n.name || '',
@@ -72,7 +68,7 @@ export default function PFNominationForm({ formData, onFormDataChange, onNext, o
         guardianAddress: ''
       }));
     }
-    // Default
+
     return [{
       name: getValue('nomineeName', 'emergencyContactName'),
       relationship: getValue('nomineeRelationship', 'emergencyContactRelation'),
@@ -85,9 +81,9 @@ export default function PFNominationForm({ formData, onFormDataChange, onNext, o
     }];
   };
   
-  // PF Nomination Form specific state
+
   const [pfNominationData, setPfNominationData] = useState({
-    // Employee Details (pre-filled from all previous forms)
+
     employeeName: getValue('fullName'),
     fatherOrSpouseName: getValue('fatherName'),
     dateOfBirth: getValue('dateOfBirth'),
@@ -96,16 +92,16 @@ export default function PFNominationForm({ formData, onFormDataChange, onNext, o
     accountNumber: getValue('pfAccountNumber'),
     dateOfJoining: getValue('dateOfJoining'),
     
-    // Address
+
     permanentAddress: getValue('permanentAddress'),
     permanentCity: getValue('permanentCity'),
     permanentState: getValue('permanentState'),
     permanentPincode: getValue('permanentPincode'),
     
-    // Nominee Details for EPF - Part A (Provident Fund)
+
     epfNominees: formData.epfNominees || getPreviousNominees(),
     
-    // Nominee Details for EPS - Part B (Pension Scheme)
+
     epsFamilyNominees: formData.epsFamilyNominees || [
       {
         name: getValue('spouseName') || '',
@@ -115,14 +111,14 @@ export default function PFNominationForm({ formData, onFormDataChange, onNext, o
       }
     ],
     
-    // Declaration
+
     declarationAccepted: getValue('pfNominationDeclarationAccepted') || false,
     declarationDate: new Date().toISOString().split('T')[0],
     declarationPlace: getValue('currentCity'),
     employeeSignature: getValue('pfNominationSignature', 'employeeSignature', 'form11Signature')
   });
 
-  // Sync with parent formData on mount
+
   useEffect(() => {
     if (formData.pfNominationData) {
       setPfNominationData(prev => ({ ...prev, ...formData.pfNominationData }));
@@ -135,7 +131,7 @@ export default function PFNominationForm({ formData, onFormDataChange, onNext, o
     setPfNominationData(prev => ({ ...prev, [name]: newValue }));
   };
 
-  // EPF Nominee handlers
+
   const handleEpfNomineeChange = (index, field, value) => {
     const updated = [...pfNominationData.epfNominees];
     updated[index] = { ...updated[index], [field]: value };
@@ -167,7 +163,7 @@ export default function PFNominationForm({ formData, onFormDataChange, onNext, o
     }
   };
 
-  // EPS Family Nominee handlers
+
   const handleEpsNomineeChange = (index, field, value) => {
     const updated = [...pfNominationData.epsFamilyNominees];
     updated[index] = { ...updated[index], [field]: value };
@@ -196,20 +192,20 @@ export default function PFNominationForm({ formData, onFormDataChange, onNext, o
   };
 
   const validateForm = () => {
-    // Check required fields
+
     if (!pfNominationData.employeeName || !pfNominationData.dateOfBirth || !pfNominationData.dateOfJoining) {
       alert('Please fill in all required employee details');
       return false;
     }
     
-    // Check EPF nominees
+
     const validEpfNominees = pfNominationData.epfNominees.filter(n => n.name && n.relationship);
     if (validEpfNominees.length === 0) {
       alert('Please add at least one EPF nominee');
       return false;
     }
     
-    // Check total share percentage for EPF
+
     const totalShare = pfNominationData.epfNominees.reduce((sum, n) => sum + (parseFloat(n.sharePercent) || 0), 0);
     if (Math.abs(totalShare - 100) > 0.01) {
       alert(`Total EPF share percentage must equal 100%. Current total: ${totalShare}%`);
@@ -268,7 +264,7 @@ export default function PFNominationForm({ formData, onFormDataChange, onNext, o
     'Father-in-law', 'Mother-in-law', 'Grandfather', 'Grandmother', 'Other'
   ];
 
-  // Check if nominee is minor (< 18 years)
+
   const isMinor = (dob) => {
     if (!dob) return false;
     const birthDate = new Date(dob);
@@ -279,7 +275,7 @@ export default function PFNominationForm({ formData, onFormDataChange, onNext, o
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      {/* Header */}
+      {}
       <div className={`p-4 rounded-xl ${isDark ? 'bg-teal-900/20 border border-teal-800' : 'bg-teal-50 border border-teal-200'}`}>
         <div className="flex items-start gap-3">
           <Info className={`mt-0.5 ${isDark ? 'text-teal-400' : 'text-teal-600'}`} size={20} />
@@ -295,7 +291,7 @@ export default function PFNominationForm({ formData, onFormDataChange, onNext, o
         </div>
       </div>
 
-      {/* Employee Details */}
+      {}
       <div className={sectionClass}>
         <SectionTitle icon={User} title="Employee Details" />
         <div className="grid md:grid-cols-3 gap-4">
@@ -374,7 +370,7 @@ export default function PFNominationForm({ formData, onFormDataChange, onNext, o
           </div>
         </div>
         
-        {/* Address */}
+        {}
         <div className="mt-4">
           <label className={labelClass}>Permanent Address</label>
           <div className="grid md:grid-cols-4 gap-4">
@@ -423,7 +419,7 @@ export default function PFNominationForm({ formData, onFormDataChange, onNext, o
         </div>
       </div>
 
-      {/* Part A: EPF Nominees */}
+      {}
       <div className={sectionClass}>
         <SectionTitle 
           icon={User} 
@@ -515,7 +511,7 @@ export default function PFNominationForm({ formData, onFormDataChange, onNext, o
                 />
               </div>
               
-              {/* Guardian details if minor */}
+              {}
               {isMinor(nominee.dateOfBirth) && (
                 <>
                   <div className={`md:col-span-4 mt-2 p-3 rounded-lg ${isDark ? 'bg-amber-900/20 text-amber-300' : 'bg-amber-50 text-amber-700'}`}>
@@ -560,7 +556,7 @@ export default function PFNominationForm({ formData, onFormDataChange, onNext, o
           </div>
         ))}
 
-        {/* Total Share Display */}
+        {}
         <div className={`mb-4 p-3 rounded-lg ${
           Math.abs(pfNominationData.epfNominees.reduce((sum, n) => sum + (parseFloat(n.sharePercent) || 0), 0) - 100) < 0.01
             ? isDark ? 'bg-green-900/20 text-green-300' : 'bg-green-50 text-green-700'
@@ -591,7 +587,7 @@ export default function PFNominationForm({ formData, onFormDataChange, onNext, o
         )}
       </div>
 
-      {/* Part B: EPS Family Members */}
+      {}
       <div className={sectionClass}>
         <SectionTitle 
           icon={User} 
@@ -689,7 +685,7 @@ export default function PFNominationForm({ formData, onFormDataChange, onNext, o
         )}
       </div>
 
-      {/* Declaration */}
+      {}
       <div className={`p-6 rounded-xl border ${isDark ? 'bg-amber-900/20 border-amber-800' : 'bg-amber-50 border-amber-200'}`}>
         <h4 className={`text-lg font-semibold mb-4 ${isDark ? 'text-amber-300' : 'text-amber-800'}`}>
           Declaration
@@ -736,7 +732,7 @@ export default function PFNominationForm({ formData, onFormDataChange, onNext, o
           <span className="text-sm font-medium">I accept the above declaration *</span>
         </label>
         
-        {/* Employee Signature */}
+        {}
         <SignatureCapture
           label="Employee Signature"
           value={pfNominationData.employeeSignature}
@@ -745,7 +741,7 @@ export default function PFNominationForm({ formData, onFormDataChange, onNext, o
         />
       </div>
 
-      {/* Navigation Buttons */}
+      {}
       <div className="flex justify-between pt-4">
         <button
           type="button"

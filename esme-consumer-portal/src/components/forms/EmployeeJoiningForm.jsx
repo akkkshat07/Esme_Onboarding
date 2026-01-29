@@ -3,17 +3,14 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { ChevronRight, ChevronLeft, Info, User, Briefcase, Home, Users, GraduationCap, Heart } from 'lucide-react';
 import SignatureCapture from './SignatureCapture';
 
-/**
- * Employee Joining Form - ESME Consumer Pvt Ltd
- * Comprehensive employee information form for onboarding
- */
+
 export default function EmployeeJoiningForm({ formData, onFormDataChange, onNext, onBack }) {
   const { isDark } = useTheme();
   
-  // Employee Joining Form specific state - this is the first form in the chain
-  // It pre-fills from the initial CandidateDashboard formData
+
+
   const [joiningData, setJoiningData] = useState({
-    // Personal Details
+
     fullName: formData.fullName || '',
     fatherName: formData.fatherName || '',
     motherName: formData.motherName || '',
@@ -25,13 +22,13 @@ export default function EmployeeJoiningForm({ formData, onFormDataChange, onNext
     religion: formData.religion || '',
     nationality: formData.nationality || 'Indian',
     
-    // Contact Information
+
     mobileNumber: formData.mobileNumber || formData.phone || '',
     alternateMobile: formData.alternateMobile || formData.alternateMobileNumber || '',
     personalEmail: formData.email || '',
     officialEmail: formData.officialEmail || '',
     
-    // Address Details
+
     currentAddress: formData.currentAddress || '',
     currentCity: formData.currentCity || '',
     currentState: formData.currentState || '',
@@ -42,7 +39,7 @@ export default function EmployeeJoiningForm({ formData, onFormDataChange, onNext
     permanentPincode: formData.permanentPincode || '',
     sameAsCurrentAddress: formData.sameAsCurrentAddress || false,
     
-    // Employment Details
+
     employeeCode: formData.employeeCode || '',
     dateOfJoining: formData.dateOfJoining || '',
     department: formData.department || formData.entity || '',
@@ -51,26 +48,26 @@ export default function EmployeeJoiningForm({ formData, onFormDataChange, onNext
     workLocation: formData.workLocation || formData.currentCity || '',
     employmentType: formData.employmentType || 'Permanent',
     
-    // Identity Documents
+
     panNumber: formData.panNumber || '',
     aadhaarNumber: formData.aadhaarNumber || (formData.aadhaarLast4 ? `XXXXXXXX${formData.aadhaarLast4}` : ''),
     passportNumber: formData.passportNumber || '',
     passportValidity: formData.passportValidity || '',
     drivingLicense: formData.drivingLicense || '',
     
-    // Bank Details
+
     bankName: formData.bankName || '',
     bankBranch: formData.bankBranch || '',
     bankAccountNumber: formData.bankAccountNumber || formData.accountNumber || '',
     ifscCode: formData.ifscCode || '',
     
-    // Educational Qualification
+
     highestQualification: formData.highestQualification || formData.education || '',
     university: formData.university || '',
     yearOfPassing: formData.yearOfPassing || '',
     specialization: formData.specialization || '',
     
-    // Previous Employment (if any)
+
     hasPreviousEmployment: formData.hasPreviousEmployment || false,
     previousEmployer: formData.previousEmployer || '',
     previousDesignation: formData.previousDesignation || '',
@@ -78,18 +75,18 @@ export default function EmployeeJoiningForm({ formData, onFormDataChange, onNext
     previousEmploymentTo: formData.previousEmploymentTo || '',
     reasonForLeaving: formData.reasonForLeaving || '',
     
-    // Emergency Contact (prefill from nominee if available)
+
     emergencyContactName: formData.emergencyContactName || formData.nomineeName || '',
     emergencyContactRelation: formData.emergencyContactRelation || formData.nomineeRelationship || '',
     emergencyContactMobile: formData.emergencyContactMobile || formData.emergencyContactNumber || '',
     emergencyContactAddress: formData.emergencyContactAddress || '',
     
-    // Declaration
+
     declarationAccepted: formData.declarationAccepted || false,
     employeeSignature: formData.employeeSignature || ''
   });
 
-  // Sync with parent formData on mount
+
   useEffect(() => {
     if (formData.joiningFormData) {
       setJoiningData(prev => ({ ...prev, ...formData.joiningFormData }));
@@ -103,7 +100,7 @@ export default function EmployeeJoiningForm({ formData, onFormDataChange, onNext
     setJoiningData(prev => {
       const updated = { ...prev, [name]: newValue };
       
-      // Handle same as current address
+
       if (name === 'sameAsCurrentAddress' && checked) {
         updated.permanentAddress = prev.currentAddress;
         updated.permanentCity = prev.currentCity;
@@ -116,7 +113,7 @@ export default function EmployeeJoiningForm({ formData, onFormDataChange, onNext
   };
 
   const validateForm = () => {
-    // Required fields validation
+
     const requiredFields = [
       'fullName', 'fatherName', 'dateOfBirth', 'gender', 'maritalStatus',
       'mobileNumber', 'currentAddress', 'currentCity', 'currentState', 'currentPincode',
@@ -148,11 +145,11 @@ export default function EmployeeJoiningForm({ formData, onFormDataChange, onNext
 
   const handleNext = () => {
     if (validateForm()) {
-      // Save joining form data to parent
+
       onFormDataChange({
         ...formData,
         joiningFormData: joiningData,
-        // Also update common fields
+
         fatherName: joiningData.fatherName,
         motherName: joiningData.motherName,
         bloodGroup: joiningData.bloodGroup,
@@ -190,7 +187,7 @@ export default function EmployeeJoiningForm({ formData, onFormDataChange, onNext
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      {/* Header */}
+      {}
       <div className={`p-4 rounded-xl ${isDark ? 'bg-teal-900/20 border border-teal-800' : 'bg-teal-50 border border-teal-200'}`}>
         <div className="flex items-start gap-3">
           <Info className={`mt-0.5 ${isDark ? 'text-teal-400' : 'text-teal-600'}`} size={20} />
@@ -206,7 +203,7 @@ export default function EmployeeJoiningForm({ formData, onFormDataChange, onNext
         </div>
       </div>
 
-      {/* Personal Details */}
+      {}
       <div className={sectionClass}>
         <SectionTitle icon={User} title="Personal Details" />
         <div className="grid md:grid-cols-3 gap-4">
@@ -345,7 +342,7 @@ export default function EmployeeJoiningForm({ formData, onFormDataChange, onNext
         </div>
       </div>
 
-      {/* Contact Information */}
+      {}
       <div className={sectionClass}>
         <SectionTitle icon={User} title="Contact Information" />
         <div className="grid md:grid-cols-2 gap-4">
@@ -400,11 +397,11 @@ export default function EmployeeJoiningForm({ formData, onFormDataChange, onNext
         </div>
       </div>
 
-      {/* Address Details */}
+      {}
       <div className={sectionClass}>
         <SectionTitle icon={Home} title="Address Details" />
         
-        {/* Current Address */}
+        {}
         <div className="mb-6">
           <h5 className={`text-sm font-medium mb-3 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Current Address</h5>
           <div className="grid md:grid-cols-2 gap-4">
@@ -460,7 +457,7 @@ export default function EmployeeJoiningForm({ formData, onFormDataChange, onNext
           </div>
         </div>
         
-        {/* Same as Current Address Checkbox */}
+        {}
         <div className="mb-4">
           <label className={`flex items-center gap-2 cursor-pointer ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
             <input
@@ -474,7 +471,7 @@ export default function EmployeeJoiningForm({ formData, onFormDataChange, onNext
           </label>
         </div>
         
-        {/* Permanent Address */}
+        {}
         <div>
           <h5 className={`text-sm font-medium mb-3 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Permanent Address</h5>
           <div className="grid md:grid-cols-2 gap-4">
@@ -535,7 +532,7 @@ export default function EmployeeJoiningForm({ formData, onFormDataChange, onNext
         </div>
       </div>
 
-      {/* Employment Details */}
+      {}
       <div className={sectionClass}>
         <SectionTitle icon={Briefcase} title="Employment Details" />
         <div className="grid md:grid-cols-3 gap-4">
@@ -626,7 +623,7 @@ export default function EmployeeJoiningForm({ formData, onFormDataChange, onNext
         </div>
       </div>
 
-      {/* Identity Documents */}
+      {}
       <div className={sectionClass}>
         <SectionTitle icon={User} title="Identity Documents" />
         <div className="grid md:grid-cols-3 gap-4">
@@ -692,7 +689,7 @@ export default function EmployeeJoiningForm({ formData, onFormDataChange, onNext
         </div>
       </div>
 
-      {/* Bank Details */}
+      {}
       <div className={sectionClass}>
         <SectionTitle icon={Briefcase} title="Bank Account Details" />
         <div className="grid md:grid-cols-2 gap-4">
@@ -747,7 +744,7 @@ export default function EmployeeJoiningForm({ formData, onFormDataChange, onNext
         </div>
       </div>
 
-      {/* Educational Qualification */}
+      {}
       <div className={sectionClass}>
         <SectionTitle icon={GraduationCap} title="Educational Qualification" />
         <div className="grid md:grid-cols-2 gap-4">
@@ -809,7 +806,7 @@ export default function EmployeeJoiningForm({ formData, onFormDataChange, onNext
         </div>
       </div>
 
-      {/* Previous Employment */}
+      {}
       <div className={sectionClass}>
         <SectionTitle icon={Briefcase} title="Previous Employment" />
         <div className="mb-4">
@@ -884,7 +881,7 @@ export default function EmployeeJoiningForm({ formData, onFormDataChange, onNext
         )}
       </div>
 
-      {/* Emergency Contact */}
+      {}
       <div className={sectionClass}>
         <SectionTitle icon={Heart} title="Emergency Contact" />
         <div className="grid md:grid-cols-2 gap-4">
@@ -948,7 +945,7 @@ export default function EmployeeJoiningForm({ formData, onFormDataChange, onNext
         </div>
       </div>
 
-      {/* Declaration */}
+      {}
       <div className={`p-6 rounded-xl border ${isDark ? 'bg-amber-900/20 border-amber-800' : 'bg-amber-50 border-amber-200'}`}>
         <h4 className={`text-lg font-semibold mb-4 ${isDark ? 'text-amber-300' : 'text-amber-800'}`}>
           Declaration
@@ -973,7 +970,7 @@ export default function EmployeeJoiningForm({ formData, onFormDataChange, onNext
           <span className="text-sm font-medium">I accept the above declaration *</span>
         </label>
         
-        {/* Employee Signature */}
+        {}
         <SignatureCapture
           label="Employee Signature"
           value={joiningData.employeeSignature}
@@ -982,7 +979,7 @@ export default function EmployeeJoiningForm({ formData, onFormDataChange, onNext
         />
       </div>
 
-      {/* Navigation Buttons */}
+      {}
       <div className="flex justify-between pt-4">
         <button
           type="button"

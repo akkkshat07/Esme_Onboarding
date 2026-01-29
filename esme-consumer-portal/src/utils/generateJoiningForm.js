@@ -1,4 +1,4 @@
-// Professional Employee Joining Form PDF Generator
+
 
 export const generateJoiningFormPDF = async (candidate) => {
   const jsPDF = (await import('jspdf')).default;

@@ -3,28 +3,25 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { ChevronRight, ChevronLeft, Info, User, Shield, AlertTriangle } from 'lucide-react';
 import SignatureCapture from './SignatureCapture';
 
-/**
- * Self Declaration Form - ESME Consumer Pvt Ltd
- * Declaration regarding employment history, criminal records, and personal conduct
- */
+
 export default function SelfDeclarationForm({ formData, onFormDataChange, onNext, onBack }) {
   const { isDark } = useTheme();
   
-  // Helper to get value from any previous form
+
   const getValue = (key, ...fallbacks) => {
-    // Check direct formData first
+
     if (formData[key]) return formData[key];
-    // Check joiningFormData
+
     if (formData.joiningFormData?.[key]) return formData.joiningFormData[key];
-    // Check formFData
+
     if (formData.formFData?.[key]) return formData.formFData[key];
-    // Check form11Data
+
     if (formData.form11Data?.[key]) return formData.form11Data[key];
-    // Check pfNominationData
+
     if (formData.pfNominationData?.[key]) return formData.pfNominationData[key];
-    // Check insuranceData
+
     if (formData.insuranceData?.[key]) return formData.insuranceData[key];
-    // Check fallback keys
+
     for (const fb of fallbacks) {
       if (formData[fb]) return formData[fb];
       if (formData.joiningFormData?.[fb]) return formData.joiningFormData[fb];
@@ -36,9 +33,9 @@ export default function SelfDeclarationForm({ formData, onFormDataChange, onNext
     return '';
   };
   
-  // Self Declaration Form specific state
+
   const [declarationData, setDeclarationData] = useState({
-    // Employee Details (pre-filled from all previous forms)
+
     employeeName: getValue('fullName'),
     fatherName: getValue('fatherName'),
     dateOfBirth: getValue('dateOfBirth'),
@@ -46,13 +43,13 @@ export default function SelfDeclarationForm({ formData, onFormDataChange, onNext
     department: getValue('department'),
     designation: getValue('designation', 'profession'),
     
-    // Address
+
     permanentAddress: getValue('permanentAddress'),
     permanentCity: getValue('permanentCity'),
     permanentState: getValue('permanentState'),
     permanentPincode: getValue('permanentPincode'),
     
-    // Criminal Record Declaration
+
     hasCriminalRecord: getValue('hasCriminalRecord') || false,
     criminalRecordDetails: getValue('criminalRecordDetails'),
     hasPendingCase: getValue('hasPendingCase') || false,
@@ -60,7 +57,7 @@ export default function SelfDeclarationForm({ formData, onFormDataChange, onNext
     hasArrestedBefore: getValue('hasArrestedBefore') || false,
     arrestDetails: getValue('arrestDetails'),
     
-    // Employment History Declaration
+
     hasTerminatedBefore: getValue('hasTerminatedBefore') || false,
     terminationDetails: getValue('terminationDetails'),
     hasResignedUnderInquiry: getValue('hasResignedUnderInquiry') || false,
@@ -68,38 +65,38 @@ export default function SelfDeclarationForm({ formData, onFormDataChange, onNext
     hasBlacklistedBefore: getValue('hasBlacklistedBefore') || false,
     blacklistDetails: getValue('blacklistDetails'),
     
-    // Professional Declaration
+
     hasValidDocuments: formData.hasValidDocuments !== false,
     hasNoFalseCertificates: formData.hasNoFalseCertificates !== false,
     hasDeclaredAllEmployments: formData.hasDeclaredAllEmployments !== false,
     
-    // Gap in Employment
+
     hasEmploymentGap: getValue('hasEmploymentGap') || false,
     employmentGapDetails: getValue('employmentGapDetails'),
     employmentGapFrom: getValue('employmentGapFrom'),
     employmentGapTo: getValue('employmentGapTo'),
     employmentGapReason: getValue('employmentGapReason'),
     
-    // Relative Employment
+
     hasRelativeInCompany: getValue('hasRelativeInCompany') || false,
     relativeDetails: getValue('relativeDetails'),
     relativeName: getValue('relativeName'),
     relativeRelationship: getValue('relativeRelationship'),
     relativeDepartment: getValue('relativeDepartment'),
     
-    // Health Declaration
+
     hasHealthIssue: getValue('hasHealthIssue') || false,
     healthIssueDetails: getValue('healthIssueDetails'),
     isFitToWork: formData.isFitToWork !== false,
     
-    // Declaration
+
     declarationAccepted: getValue('selfDeclarationAccepted') || false,
     declarationDate: new Date().toISOString().split('T')[0],
     declarationPlace: getValue('currentCity'),
     employeeSignature: getValue('selfDeclarationSignature', 'employeeSignature', 'insuranceSignature', 'pfNominationSignature', 'form11Signature')
   });
 
-  // Sync with parent formData on mount
+
   useEffect(() => {
     if (formData.selfDeclarationData) {
       setDeclarationData(prev => ({ ...prev, ...formData.selfDeclarationData }));
@@ -188,7 +185,7 @@ export default function SelfDeclarationForm({ formData, onFormDataChange, onNext
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      {/* Header */}
+      {}
       <div className={`p-4 rounded-xl ${isDark ? 'bg-amber-900/20 border border-amber-800' : 'bg-amber-50 border border-amber-200'}`}>
         <div className="flex items-start gap-3">
           <Info className={`mt-0.5 ${isDark ? 'text-amber-400' : 'text-amber-600'}`} size={20} />
@@ -204,7 +201,7 @@ export default function SelfDeclarationForm({ formData, onFormDataChange, onNext
         </div>
       </div>
 
-      {/* Employee Details */}
+      {}
       <div className={sectionClass}>
         <SectionTitle icon={User} title="Employee Details" />
         <div className="grid md:grid-cols-3 gap-4">
@@ -311,7 +308,7 @@ export default function SelfDeclarationForm({ formData, onFormDataChange, onNext
         </div>
       </div>
 
-      {/* Criminal Record Declaration */}
+      {}
       <div className={sectionClass}>
         <SectionTitle 
           icon={AlertTriangle} 
@@ -379,7 +376,7 @@ export default function SelfDeclarationForm({ formData, onFormDataChange, onNext
         </div>
       </div>
 
-      {/* Employment History Declaration */}
+      {}
       <div className={sectionClass}>
         <SectionTitle 
           icon={Shield} 
@@ -446,7 +443,7 @@ export default function SelfDeclarationForm({ formData, onFormDataChange, onNext
         </div>
       </div>
 
-      {/* Gap in Employment */}
+      {}
       <div className={sectionClass}>
         <SectionTitle icon={User} title="Gap in Employment" />
         
@@ -512,7 +509,7 @@ export default function SelfDeclarationForm({ formData, onFormDataChange, onNext
         </DeclarationQuestion>
       </div>
 
-      {/* Relative in Company */}
+      {}
       <div className={sectionClass}>
         <SectionTitle icon={User} title="Relative in Company" />
         
@@ -571,7 +568,7 @@ export default function SelfDeclarationForm({ formData, onFormDataChange, onNext
         </DeclarationQuestion>
       </div>
 
-      {/* Health Declaration */}
+      {}
       <div className={sectionClass}>
         <SectionTitle icon={Shield} title="Health & Fitness Declaration" />
         
@@ -610,7 +607,7 @@ export default function SelfDeclarationForm({ formData, onFormDataChange, onNext
         </div>
       </div>
 
-      {/* Professional Affirmations */}
+      {}
       <div className={sectionClass}>
         <SectionTitle icon={Shield} title="Professional Affirmations" />
         
@@ -656,7 +653,7 @@ export default function SelfDeclarationForm({ formData, onFormDataChange, onNext
         </div>
       </div>
 
-      {/* Final Declaration */}
+      {}
       <div className={`p-6 rounded-xl border ${isDark ? 'bg-red-900/20 border-red-800' : 'bg-red-50 border-red-200'}`}>
         <h4 className={`text-lg font-semibold mb-4 ${isDark ? 'text-red-300' : 'text-red-800'}`}>
           Final Declaration
@@ -710,7 +707,7 @@ export default function SelfDeclarationForm({ formData, onFormDataChange, onNext
           <span className="text-sm font-medium">I have read, understood, and accept the above declaration *</span>
         </label>
         
-        {/* Employee Signature */}
+        {}
         <SignatureCapture
           label="Employee Signature"
           value={declarationData.employeeSignature}
@@ -719,7 +716,7 @@ export default function SelfDeclarationForm({ formData, onFormDataChange, onNext
         />
       </div>
 
-      {/* Navigation Buttons */}
+      {}
       <div className="flex justify-between pt-4">
         <button
           type="button"

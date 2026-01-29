@@ -16,17 +16,17 @@ import SelfDeclarationForm from '../forms/SelfDeclarationForm';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
-// File validation helper
+
 const validateFile = (file) => {
   const isImage = file.type.startsWith('image/');
   const isPdf = file.type === 'application/pdf';
   
-  // Check file type
+
   if (!ALLOWED_FILE_TYPES.documents.includes(file.type)) {
     return { valid: false, error: 'Invalid file type. Please upload PDF, JPG, or PNG files only.' };
   }
   
-  // Check file size
+
   const maxSize = isImage ? FILE_SIZE_LIMITS.image : FILE_SIZE_LIMITS.pdf;
   const maxSizeMB = maxSize / (1024 * 1024);
   
@@ -79,11 +79,11 @@ export default function CandidateDashboard({ user, onLogout }) {
     panNumber: '',
     passportNumber: '',
     uanNumber: '',
-    // Emergency Contact
+
     emergencyContactName: '',
     emergencyContactRelation: '',
     emergencyContactNumber: '',
-    // Family & Nominee Details
+
     spouseName: '',
     nomineeName: '',
     nomineeRelationship: '',
@@ -170,7 +170,7 @@ export default function CandidateDashboard({ user, onLogout }) {
       
       if (response.ok) {
         alert('Personal information saved successfully!');
-        setActiveStep('form_joining'); // Go to Employee Joining Form step
+        setActiveStep('form_joining');
       } else {
         alert(`Error: ${data.error || 'Failed to save'}`);
       }
@@ -202,7 +202,7 @@ export default function CandidateDashboard({ user, onLogout }) {
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      // Ensure email is in profileData
+
       const profileDataWithEmail = {
         ...formData,
         email: formData.email || user.email
@@ -220,7 +220,7 @@ export default function CandidateDashboard({ user, onLogout }) {
         })
       });
       
-      // Refetch candidate data to get updated info including documents
+
       const refreshRes = await fetch(`${API_URL}/candidate/${user.email}`);
       if (refreshRes.ok) {
         const freshData = await refreshRes.json();
@@ -340,7 +340,7 @@ export default function CandidateDashboard({ user, onLogout }) {
         </aside>
 
         <main className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-8 shadow-sm relative min-h-[600px] transition-all duration-300 hover:shadow-lg overflow-visible">
-          {/* Main Form - Show directly without Aadhaar verification */}
+          {}
           {activeStep === 'info' && (
             <div className="space-y-6 animate-fade-in-up">
               <SectionHeader title="Personal Information & BGV Details" subtitle="All information will be synced to BGV sheet and visible to admin" />
@@ -460,7 +460,7 @@ export default function CandidateDashboard({ user, onLogout }) {
             </div>
           )}
 
-          {/* Step 2: Employee Joining Form - Placeholder (to be implemented) */}
+          {}
           {activeStep === 'form_joining' && (
             <EmployeeJoiningForm
               formData={formData}
@@ -470,7 +470,7 @@ export default function CandidateDashboard({ user, onLogout }) {
             />
           )}
 
-          {/* Step 3: Form F - Gratuity Nomination Form */}
+          {}
           {activeStep === 'form_f' && (
             <FormF 
               formData={formData}
@@ -480,7 +480,7 @@ export default function CandidateDashboard({ user, onLogout }) {
             />
           )}
 
-          {/* Step 4: Form 11 - PF Declaration - Placeholder */}
+          {}
           {activeStep === 'form_11' && (
             <Form11
               formData={formData}
@@ -490,7 +490,7 @@ export default function CandidateDashboard({ user, onLogout }) {
             />
           )}
 
-          {/* Step 5: PF Nomination Form */}
+          {}
           {activeStep === 'form_pf_nomination' && (
             <PFNominationForm
               formData={formData}
@@ -500,7 +500,7 @@ export default function CandidateDashboard({ user, onLogout }) {
             />
           )}
 
-          {/* Step 6: Medical Insurance Form */}
+          {}
           {activeStep === 'form_insurance' && (
             <MedicalInsuranceForm
               formData={formData}
@@ -510,7 +510,7 @@ export default function CandidateDashboard({ user, onLogout }) {
             />
           )}
 
-          {/* Step 7: Self Declaration Form */}
+          {}
           {activeStep === 'form_self_declaration' && (
             <SelfDeclarationForm
               formData={formData}
@@ -712,7 +712,7 @@ function UploadItem({ label, required, onUpload, delay = 0 }) {
             const file = e.target.files[0];
             if(!file) return;
             
-            // Validate file
+
             const validation = validateFile(file);
             if (!validation.valid) {
               setError(validation.error);

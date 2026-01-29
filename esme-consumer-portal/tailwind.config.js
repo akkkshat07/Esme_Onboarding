@@ -1,7 +1,7 @@
 export default {
   content: [
     "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
+    "./src*.{js,ts,jsx,tsx}",
   ],
   darkMode: 'class',
   theme: {
@@ -12,7 +12,7 @@ export default {
           dark: '#1e293b',
           bg: '#f8fafc',
           accent: '#ccfbf1',
-          // Dark mode colors
+
           darkBg: '#0f172a',
           darkCard: '#1e293b',
           darkBorder: '#334155'

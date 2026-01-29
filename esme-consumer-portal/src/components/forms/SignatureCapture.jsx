@@ -2,11 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Pen, RotateCcw, Upload, X, Check } from 'lucide-react';
 
-/**
- * SignatureCapture Component
- * Allows users to draw their signature or upload an image of their signature
- * Returns the signature as a base64 data URL
- */
+
 export default function SignatureCapture({ 
   label = "Signature", 
   value = '', 
@@ -19,31 +15,31 @@ export default function SignatureCapture({
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [mode, setMode] = useState('draw'); // 'draw' or 'upload'
+  const [mode, setMode] = useState('draw');
   const [hasSignature, setHasSignature] = useState(!!value);
 
-  // Canvas drawing setup
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     
     const ctx = canvas.getContext('2d');
     
-    // Set canvas size
+
     canvas.width = width;
     canvas.height = height;
     
-    // Set drawing styles
+
     ctx.strokeStyle = isDark ? '#ffffff' : '#1e293b';
     ctx.lineWidth = 2;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     
-    // Fill background
+
     ctx.fillStyle = isDark ? '#1e293b' : '#ffffff';
     ctx.fillRect(0, 0, width, height);
     
-    // If there's an existing signature, draw it
+
     if (value) {
       const img = new Image();
       img.onload = () => {
@@ -54,7 +50,7 @@ export default function SignatureCapture({
     }
   }, [isDark, width, height]);
 
-  // Drawing functions
+
   const getCanvasCoords = (e) => {
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
@@ -128,13 +124,13 @@ export default function SignatureCapture({
     const file = e.target.files[0];
     if (!file) return;
     
-    // Validate file type
+
     if (!file.type.startsWith('image/')) {
       alert('Please upload an image file');
       return;
     }
     
-    // Validate file size (max 2MB)
+
     if (file.size > 2 * 1024 * 1024) {
       alert('File size should be less than 2MB');
       return;
@@ -147,11 +143,11 @@ export default function SignatureCapture({
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
         
-        // Clear canvas
+
         ctx.fillStyle = isDark ? '#1e293b' : '#ffffff';
         ctx.fillRect(0, 0, width, height);
         
-        // Calculate aspect ratio to fit image in canvas
+
         const scale = Math.min(width / img.width, height / img.height) * 0.9;
         const newWidth = img.width * scale;
         const newHeight = img.height * scale;
@@ -200,7 +196,7 @@ export default function SignatureCapture({
           {label} {required && <span className="text-red-500">*</span>}
         </label>
         
-        {/* Mode Tabs */}
+        {}
         <div className="flex gap-2">
           <button
             type="button"
@@ -224,7 +220,7 @@ export default function SignatureCapture({
         </div>
       </div>
       
-      {/* Canvas */}
+      {}
       <div className={`relative border-2 border-dashed rounded-lg overflow-hidden ${
         isDark ? 'border-slate-600' : 'border-slate-300'
       }`} style={{ minHeight: height }}>
@@ -256,7 +252,7 @@ export default function SignatureCapture({
         )}
       </div>
       
-      {/* Actions */}
+      {}
       <div className="flex items-center justify-between mt-3">
         <button
           type="button"
@@ -275,7 +271,7 @@ export default function SignatureCapture({
         )}
       </div>
       
-      {/* Hidden file input */}
+      {}
       <input
         ref={fileInputRef}
         type="file"
