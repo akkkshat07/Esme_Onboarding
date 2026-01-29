@@ -1,7 +1,26 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { jsPDF } from 'jspdf';
+import EsmeLogo from '../assets/Esme-Logo-01.png';
 
 const PDF_BASE_PATH = '/forms';
+
+// Helper to load logo
+const getLogoBase64 = () => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    img.src = EsmeLogo;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = () => resolve(null);
+  });
+};
 
 
 const setTextField = (form, fieldName, value, options = {}) => {
@@ -808,143 +827,255 @@ export const generateEmployeeJoiningForm = async (candidateData, employeeSignatu
   
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 15;
   let y = 15;
   
-
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
-  doc.text('EMPLOYEE JOINING FORM', pageWidth / 2, y, { align: 'center' });
-  y += 6;
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text('ESME Consumer (P) Ltd', pageWidth / 2, y, { align: 'center' });
-  y += 8;
-  
-  doc.setLineWidth(0.3);
-  doc.line(margin, y, pageWidth - margin, y);
-  y += 8;
-  
-  const fullName = profile.fullName || [profile.firstName, profile.middleName, profile.lastName].filter(Boolean).join(' ') || '';
-  
-
-  const safeValue = (val) => {
-    if (val === undefined || val === null || val === 'undefined' || val === 'null') {
-      return '';
+  // --- HEADER ---
+  const logoBase64 = await getLogoBase64();
+  if (logoBase64) {
+    try {
+      doc.addImage(logoBase64, 'PNG', margin, 10, 45, 18);
+    } catch (e) {
+      console.error('Logo add error:', e);
     }
-    return String(val).replace(/undefined/g, '').replace(/null/g, '').trim();
-  };
+  }
   
+  doc.setTextColor(23, 72, 63); // Esme Teal
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text('EMPLOYEE JOINING FORM', pageWidth - margin, 20, { align: 'right' });
+  
+  doc.setTextColor(100, 100, 100);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.text('ESME Consumer (P) Ltd', pageWidth - margin, 26, { align: 'right' });
+  doc.text('New Delhi, India', pageWidth - margin, 30, { align: 'right' }); 
+  
+  y = 45;
+  
+  // Helper functions
+  const checkPageBreak = (height = 20) => {
+    if (y + height > pageHeight - margin) {
+      doc.addPage();
+      y = 20;
+    }
+  };
 
-  const addRow = (label, value, width = 85) => {
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.text(label + ':', margin, y);
-    doc.setFont('helvetica', 'normal');
-    const valueText = safeValue(value) || 'N/A';
-    doc.text(valueText.substring(0, 50), margin + 45, y);
-    return 5;
-  };
-  
-  const addSection = (title) => {
-    y += 3;
+  const drawSectionHeader = (title) => {
+    checkPageBreak(15);
+    doc.setFillColor(23, 72, 63); // Esme Teal
+    doc.roundedRect(margin, y, pageWidth - 2 * margin, 8, 1, 1, 'F');
+    doc.setTextColor(255, 255, 255);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.setFillColor(240, 240, 240);
-    doc.rect(margin, y - 3, pageWidth - 2 * margin, 6, 'F');
-    doc.text(title, margin + 2, y + 1);
-    y += 8;
+    doc.text(title.toUpperCase(), margin + 5, y + 5.5);
+    y += 12;
   };
-  
 
-  addSection('PERSONAL INFORMATION');
-  y += addRow('Full Name', fullName);
-  y += addRow('Date of Birth', formatDate(profile.dateOfBirth || profile.dob || joining.dateOfBirth));
-  y += addRow('Gender', profile.gender || joining.gender);
-  y += addRow("Father's Name", profile.fatherName || joining.fatherName);
-  y += addRow('Marital Status', profile.maritalStatus || joining.maritalStatus);
-  y += addRow('Blood Group', profile.bloodGroup || joining.bloodGroup);
-  y += addRow('Nationality', profile.nationality || 'Indian');
-  y += addRow('Religion', profile.religion || joining.religion);
-  
+  const drawFieldBox = (label, value, x, width, height = 14) => {
+    doc.setDrawColor(200, 200, 200);
+    doc.setFillColor(250, 250, 250);
+    // Label
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(100, 100, 100);
+    doc.text(label.toUpperCase(), x + 2, y + 4);
+    
+    // Value
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 0, 0);
+    let displayValue = String(value || '-');
+    if (displayValue === 'undefined' || displayValue === 'null') displayValue = '-';
+    
+    // Text wrapping
+    const textWidth = width - 4;
+    const splitText = doc.splitTextToSize(displayValue, textWidth);
+    doc.text(splitText, x + 2, y + 9);
+    
+    // Border (optional, or just use spacing)
+    // doc.rect(x, y, width, height); // Minimal look without field borders is often cleaner, but let's add a bottom line
+    doc.setDrawColor(230, 230, 230);
+    doc.line(x, y + height - 2, x + width - 2, y + height - 2);
+  };
 
-  addSection('CONTACT DETAILS');
-  y += addRow('Mobile Number', profile.mobileNumber || profile.phone || joining.mobileNumber);
-  y += addRow('Email (Personal)', profile.email || profile.personalEmail || joining.personalEmail);
-  y += addRow('Email (Official)', profile.officialEmail || joining.officialEmail);
-  y += addRow('Emergency Contact', joining.emergencyContactName);
-  y += addRow('Emergency Phone', joining.emergencyContactPhone);
-  
+  const drawTwoColumn = (l1, v1, l2, v2) => {
+    checkPageBreak(15);
+    const colWidth = (pageWidth - 2 * margin) / 2;
+    drawFieldBox(l1, v1, margin, colWidth);
+    if (l2) drawFieldBox(l2, v2, margin + colWidth, colWidth);
+    y += 15;
+  };
 
-  addSection('CURRENT ADDRESS');
-  y += addRow('Address', (profile.currentAddress || profile.address || joining.currentAddress || '').substring(0, 60));
-  y += addRow('City', profile.currentCity || profile.city || joining.currentCity);
-  y += addRow('State', profile.currentState || profile.state || joining.currentState);
-  y += addRow('Pincode', profile.currentPincode || profile.pincode || joining.currentPincode);
-  
+  const drawThreeColumn = (l1, v1, l2, v2, l3, v3) => {
+    checkPageBreak(15);
+    const colWidth = (pageWidth - 2 * margin) / 3;
+    drawFieldBox(l1, v1, margin, colWidth);
+    if (l2) drawFieldBox(l2, v2, margin + colWidth, colWidth);
+    if (l3) drawFieldBox(l3, v3, margin + 2 * colWidth, colWidth);
+    y += 15;
+  };
 
-  addSection('PERMANENT ADDRESS');
-  y += addRow('Address', (profile.permanentAddress || joining.permanentAddress || '').substring(0, 60));
-  y += addRow('City', profile.permanentCity || joining.permanentCity);
-  y += addRow('State', profile.permanentState || joining.permanentState);
-  y += addRow('Pincode', profile.permanentPincode || joining.permanentPincode);
-  
+  const fullName = profile.fullName || [profile.firstName, profile.middleName, profile.lastName].filter(Boolean).join(' ') || '';
 
-  addSection('IDENTITY DOCUMENTS');
+  // --- 1. PERSONAL DETAILS ---
+  drawSectionHeader('Personal Details');
+  drawTwoColumn('Full Name', fullName, 'Date of Birth', formatDate(profile.dateOfBirth || profile.dob || joining.dateOfBirth));
+  drawTwoColumn('Father\'s Name', profile.fatherName || joining.fatherName, 'Mother\'s Name', profile.motherName || joining.motherName);
+  drawTwoColumn('Spouse Name', profile.spouseName || joining.spouseName, 'Gender', profile.gender || joining.gender);
+  drawThreeColumn('Marital Status', profile.maritalStatus || joining.maritalStatus, 'Blood Group', profile.bloodGroup || joining.bloodGroup, 'Religion', profile.religion || joining.religion);
+  drawTwoColumn('Nationality', profile.nationality || 'Indian', 'Employee Code', profile.employeeId || joining.employeeCode || joining.employeeId || 'TBD');
 
-  const aadhaarVal = profile.aadhaarNumber || profile.aadharNumber || joining.aadhaarNumber || joining.aadharNumber || '';
-  const cleanAadhaar = String(aadhaarVal).replace(/undefined/g, '').replace(/null/g, '').trim();
-  y += addRow('Aadhaar Number', cleanAadhaar);
-  y += addRow('PAN Number', profile.panNumber || joining.panNumber);
-  y += addRow('Passport Number', profile.passportNumber || joining.passportNumber);
+  // --- 2. CONTACT DETAILS ---
+  drawSectionHeader('Contact Information');
+  drawTwoColumn('Mobile Number', profile.mobileNumber || joining.mobileNumber, 'Alternate Mobile', joining.alternateMobile || joining.alternateMobileNumber);
+  drawTwoColumn('Personal Email', profile.email || joining.personalEmail, 'Official Email', profile.officialEmail || joining.officialEmail || 'TBD');
   
-
-  addSection('BANK DETAILS');
-  y += addRow('Bank Name', profile.bankName || joining.bankName);
-  y += addRow('Account Number', profile.bankAccountNumber || profile.accountNumber || joining.bankAccountNumber);
-  y += addRow('IFSC Code', profile.ifscCode || profile.bankIfscCode || joining.ifscCode);
-  y += addRow('Branch', profile.bankBranch || joining.bankBranch);
-  
-
-  addSection('EMPLOYMENT DETAILS');
-  y += addRow('Department', profile.department || joining.department);
-  y += addRow('Designation', profile.designation || joining.designation);
-  y += addRow('Date of Joining', formatDate(profile.dateOfJoining || joining.dateOfJoining));
-  y += addRow('Employee ID', profile.employeeId || joining.employeeId || 'To be assigned');
-  
-
-  if (y > 250) {
-    doc.addPage();
-    y = 20;
-  }
-  y += 10;
-  
-  doc.setFont('helvetica', 'normal');
+  y += 5;
   doc.setFontSize(9);
-  doc.text('I hereby declare that all the information provided above is true and correct to the best of my knowledge.', margin, y);
-  y += 15;
-  
-  doc.text('Place: ' + (joining.declarationPlace || profile.currentCity || profile.city || '____________'), margin, y);
-  doc.text('Date: ' + formatDate(new Date()), pageWidth - margin - 40, y);
-  
-  y += 15;
   doc.setFont('helvetica', 'bold');
-  doc.text('Employee Signature:', margin, y);
+  doc.setTextColor(23, 72, 63);
+  doc.text('Emergency Contact', margin + 2, y);
+  y += 5;
+  drawThreeColumn('Name', joining.emergencyContactName, 'Relation', joining.emergencyContactRelation, 'Number', joining.emergencyContactPhone || joining.emergencyContactMobile);
+  if (joining.emergencyContactAddress) {
+    checkPageBreak(15);
+    drawFieldBox('Emergency Address', joining.emergencyContactAddress, margin, pageWidth - 2 * margin);
+    y += 15;
+  }
+
+  // --- 3. ADDRESS DETAILS ---
+  drawSectionHeader('Address Details');
+  
+  checkPageBreak(25);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(100, 100, 100);
+  doc.text('CURRENT ADDRESS', margin + 2, y);
+  y += 5;
+  const curAddr = [
+    profile.currentAddress || joining.currentAddress,
+    profile.currentCity || joining.currentCity,
+    profile.currentState || joining.currentState,
+    profile.currentPincode || joining.currentPincode
+  ].filter(Boolean).join(', ');
+  drawFieldBox('Full Address', curAddr, margin, pageWidth - 2 * margin, 12);
+  y += 15;
+
+  checkPageBreak(25);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(100, 100, 100);
+  doc.text('PERMANENT ADDRESS', margin + 2, y);
+  y += 5;
+  const permAddr = [
+    profile.permanentAddress || joining.permanentAddress,
+    profile.permanentCity || joining.permanentCity,
+    profile.permanentState || joining.permanentState,
+    profile.permanentPincode || joining.permanentPincode
+  ].filter(Boolean).join(', ');
+  drawFieldBox('Full Address', permAddr, margin, pageWidth - 2 * margin, 12);
+  y += 15;
+
+  // --- 4. PROFESSIONAL DETAILS ---
+  drawSectionHeader('Professional Details');
+  drawTwoColumn('Date of Joining', formatDate(profile.dateOfJoining || joining.dateOfJoining), 'Department', profile.department || joining.department);
+  drawTwoColumn('Designation', profile.designation || joining.designation, 'Reporting Manager', joining.reportingManager || 'TBD');
+  drawTwoColumn('Work Location', profile.workLocation || joining.workLocation, 'Employment Type', profile.employmentType || joining.employmentType || 'Permanent');
+
+  // --- 5. EDUCATIONAL QUALIFICATION ---
+  drawSectionHeader('Educational Qualification');
+  if (joining.highestQualification || joining.university) {
+    drawTwoColumn('Qualification', joining.highestQualification, 'University / Board', joining.university);
+    drawThreeColumn('Year of Passing', joining.yearOfPassing, 'Specialization', joining.specialization, 'Percentage/CGPA', '-');
+  } else {
+    doc.setFontSize(9);
+    doc.setTextColor(150, 150, 150);
+    doc.text('No education details provided', margin + 5, y + 5);
+    y += 10;
+  }
+
+  // --- 6. PREVIOUS EMPLOYMENT ---
+  drawSectionHeader('Previous Employment');
+  if (joining.hasPreviousEmployment || joining.previousEmployer) {
+    drawTwoColumn('Previous Employer', joining.previousEmployer, 'Last Designation', joining.previousDesignation);
+    drawThreeColumn('From Date', formatDate(joining.previousEmploymentFrom), 'To Date', formatDate(joining.previousEmploymentTo), 'Reason for Leaving', joining.reasonForLeaving);
+  } else {
+    doc.setFontSize(9);
+    doc.setTextColor(150, 150, 150);
+    doc.text('No previous employment details provided / Fresher', margin + 5, y + 5);
+    y += 10;
+  }
+
+  // --- 7. STATUTORY & BANK DETAILS ---
+  drawSectionHeader('Statutory & Bank Information');
+  drawTwoColumn('Aadhaar Number', profile.aadhaarNumber || joining.aadhaarNumber, 'PAN Number', profile.panNumber || joining.panNumber);
+  drawTwoColumn('Passport Number', profile.passportNumber || joining.passportNumber, 'Driving License', profile.drivingLicense || joining.drivingLicense);
+  
+  y += 5;
+  doc.setDrawColor(200, 200, 200);
+  doc.line(margin, y, pageWidth - margin, y);
+  y += 10;
+
+  drawTwoColumn('Bank Name', profile.bankName || joining.bankName, 'Account Number', profile.bankAccountNumber || joining.bankAccountNumber);
+  drawTwoColumn('Branch', profile.bankBranch || joining.bankBranch, 'IFSC Code', profile.ifscCode || joining.ifscCode);
+
+  // --- 8. DECLARATION ---
+  checkPageBreak(60);
+  doc.setFillColor(245, 245, 245);
+  doc.roundedRect(margin, y, pageWidth - 2 * margin, 50, 2, 2, 'F');
+  
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(23, 72, 63);
+  doc.text('DECLARATION', margin + 10, y + 10);
+  
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(0, 0, 0);
+  const declarationText = "I hereby declare that the particulars given above are true and correct to the best of my knowledge and belief. I understand that if any of the information is found to be false or incorrect, my employment is liable to be terminated without any notice. I also agree to abide by the rules and regulations of ESME Consumer (P) Ltd.";
+  const splitDecl = doc.splitTextToSize(declarationText, pageWidth - 2 * margin - 20);
+  doc.text(splitDecl, margin + 10, y + 20);
+  
+  y += 65;
+
+  // --- SIGNATURES ---
+  checkPageBreak(40);
+  const sigY = y;
+  
+  // Box for Employee Signature
+  doc.setDrawColor(200, 200, 200);
+  doc.rect(margin, sigY, 60, 30);
   
   const rawSig = employeeSignature || profile.signature || joining.employeeSignature;
   if (rawSig) {
     try {
-
       const sig = await processSignatureForPDF(rawSig);
       if (sig) {
-        doc.addImage(sig, 'PNG', margin, y + 3, 40, 15);
+        doc.addImage(sig, 'PNG', margin + 5, sigY + 5, 50, 20);
       }
     } catch (e) {
       console.log('Signature image error:', e.message);
     }
   }
   
-  doc.text('(' + fullName + ')', margin, y + 25);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.text('EMPLOYEE SIGNATURE', margin + 5, sigY + 38);
+  doc.setFont('helvetica', 'normal');
+  doc.text(fullName, margin + 5, sigY + 42);
+  doc.text('Date: ' + formatDate(new Date()), margin + 5, sigY + 46);
+  
+  // Box for HR Signature
+  doc.setDrawColor(200, 200, 200);
+  doc.rect(pageWidth - margin - 60, sigY, 60, 30);
+  
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.text('FOR ESME CONSUMER (P) LTD', pageWidth - margin - 55, sigY + 38);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Authorized Signatory', pageWidth - margin - 55, sigY + 42);
   
   return doc.output('arraybuffer');
 };
@@ -959,71 +1090,111 @@ export const generateMedicalInsuranceForm = async (candidateData, employeeSignat
   const margin = 15;
   let y = 15;
   
-
+  // Header with Logo
+  const logoBase64 = await getLogoBase64();
+  if (logoBase64) {
+    try {
+      doc.addImage(logoBase64, 'PNG', margin, 10, 40, 15);
+    } catch (e) {
+      console.error('Logo add error:', e);
+    }
+  }
+  
+  // Title
+  doc.setTextColor(23, 72, 63); // Esme Teal
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.text('MEDICAL INSURANCE ENROLLMENT FORM', pageWidth / 2, y, { align: 'center' });
-  y += 6;
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text('ESME Consumer (P) Ltd', pageWidth / 2, y, { align: 'center' });
-  y += 8;
+  doc.text('MEDICAL INSURANCE ENROLLMENT FORM', pageWidth - margin, 20, { align: 'right' });
   
-  doc.setLineWidth(0.3);
+  doc.setTextColor(100, 100, 100);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.text('ESME Consumer (P) Ltd', pageWidth - margin, 25, { align: 'right' });
+  
+  y = 40;
+  doc.setDrawColor(23, 72, 63);
+  doc.setLineWidth(0.5);
   doc.line(margin, y, pageWidth - margin, y);
-  y += 8;
+  y += 10;
   
   const fullName = profile.fullName || [profile.firstName, profile.middleName, profile.lastName].filter(Boolean).join(' ') || '';
   
-
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  doc.setFillColor(240, 240, 240);
-  doc.rect(margin, y - 3, pageWidth - 2 * margin, 6, 'F');
-  doc.text('EMPLOYEE DETAILS', margin + 2, y + 1);
-  y += 10;
-  
-  const addRow = (label, value) => {
+  // Helper for 2-column layout (Same as previous)
+  const addRow = (field1, val1, field2, val2) => {
+    if (y > 270) {
+      doc.addPage();
+      y = 20;
+    }
+    const col1 = margin;
+    const col2 = margin + 95;
+    
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.text(label + ':', margin, y);
+    doc.setTextColor(60, 60, 60);
+    doc.text(field1 + ':', col1, y);
+    
     doc.setFont('helvetica', 'normal');
-    doc.text(String(value || 'N/A'), margin + 50, y);
+    doc.setTextColor(0, 0, 0);
+    doc.text((String(val1 || 'N/A')).substring(0, 35), col1 + 40, y);
+    
+    if (field2) {
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(60, 60, 60);
+      doc.text(field2 + ':', col2, y);
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(0, 0, 0);
+      doc.text((String(val2 || 'N/A')).substring(0, 35), col2 + 40, y);
+    }
+    y += 8;
+  };
+
+  const addSection = (title) => {
+    if (y > 270) {
+      doc.addPage();
+      y = 20;
+    }
     y += 5;
+    doc.setFillColor(23, 72, 63);
+    doc.rect(margin, y - 4, pageWidth - 2 * margin, 7, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text(title.toUpperCase(), margin + 5, y + 1);
+    y += 12;
   };
   
-  addRow('Employee Name', fullName);
-  addRow('Employee ID', profile.employeeId || medical.employeeId || 'To be assigned');
-  addRow('Department', profile.department || medical.department || joining.department);
-  addRow('Designation', profile.designation || medical.designation || joining.designation);
-  addRow('Date of Birth', formatDate(profile.dateOfBirth || profile.dob || joining.dateOfBirth));
-  addRow('Gender', profile.gender || joining.gender);
-  addRow('Blood Group', profile.bloodGroup || medical.bloodGroup || joining.bloodGroup);
-  addRow('Marital Status', profile.maritalStatus || joining.maritalStatus);
-  addRow('Contact Number', profile.mobileNumber || profile.phone || joining.mobileNumber);
-  addRow('Email', profile.email || profile.personalEmail || joining.personalEmail);
-  addRow('Address', (profile.currentAddress || profile.address || joining.currentAddress || '').substring(0, 50));
+  // --- EMPLOYEE DETAILS ---
+  addSection('Employee Details');
+  addRow('Employee Name', fullName, 'Employee ID', profile.employeeId || medical.employeeId || 'To be assigned');
+  addRow('Department', profile.department || medical.department || joining.department, 'Designation', profile.designation || medical.designation || joining.designation);
+  addRow('Date of Birth', formatDate(profile.dateOfBirth || profile.dob || joining.dateOfBirth), 'Gender', profile.gender || joining.gender);
+  addRow('Blood Group', profile.bloodGroup || medical.bloodGroup || joining.bloodGroup, 'Marital Status', profile.maritalStatus || joining.maritalStatus);
+  addRow('Contact Number', profile.mobileNumber || profile.phone || joining.mobileNumber, 'Email', profile.email || profile.personalEmail || joining.personalEmail);
   
-
-  y += 5;
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
+  const currentAddr = (profile.currentAddress || profile.address || joining.currentAddress || '').substring(0, 80);
+  addRow('Address', currentAddr);
+  
+  // --- DEPENDENTS ---
+  addSection('Dependent Details');
+  
+  // Table Header
   doc.setFillColor(240, 240, 240);
-  doc.rect(margin, y - 3, pageWidth - 2 * margin, 6, 'F');
-  doc.text('DEPENDENT DETAILS', margin + 2, y + 1);
-  y += 10;
-  
-
+  doc.rect(margin, y - 4, pageWidth - 2 * margin, 8, 'F');
+  doc.setTextColor(0, 0, 0);
   doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
-  const cols = [margin, margin + 8, margin + 55, margin + 85, margin + 110, margin + 135, margin + 160];
+  
+  const cols = [margin + 2, margin + 15, margin + 60, margin + 90, margin + 115, margin + 140];
   doc.text('S.No', cols[0], y);
   doc.text('Name', cols[1], y);
   doc.text('Relationship', cols[2], y);
-  doc.text('DOB', cols[3], y);
+  doc.text('Date of Birth', cols[3], y);
   doc.text('Gender', cols[4], y);
-  doc.text('Aadhaar', cols[5], y);
-  y += 3;
+  doc.text('Aadhaar No', cols[5], y);
+  
+  y += 6;
+  doc.setDrawColor(200, 200, 200);
   doc.line(margin, y, pageWidth - margin, y);
   y += 5;
   
@@ -1031,22 +1202,23 @@ export const generateMedicalInsuranceForm = async (candidateData, employeeSignat
   const dependents = medical.dependents || [];
   
   if (dependents.length === 0) {
-    doc.text('No dependents added', margin, y);
+    doc.text('No dependents added', margin + 5, y);
     y += 5;
   } else {
     dependents.forEach((dep, i) => {
       doc.text(String(i + 1), cols[0], y);
-      doc.text((dep.name || '').substring(0, 20), cols[1], y);
-      doc.text((dep.relationship || '').substring(0, 12), cols[2], y);
+      doc.text((dep.name || '').substring(0, 25), cols[1], y);
+      doc.text((dep.relationship || '').substring(0, 15), cols[2], y);
       doc.text(formatDate(dep.dob), cols[3], y);
-      doc.text((dep.gender || '').substring(0, 6), cols[4], y);
-      doc.text((dep.aadhaar || '').substring(0, 12), cols[5], y);
-      y += 5;
+      doc.text((dep.gender || '').substring(0, 10), cols[4], y);
+      doc.text((dep.aadhaar || '').substring(0, 15), cols[5], y);
+      y += 6;
+      doc.line(margin, y - 2, pageWidth - margin, y - 2); // Separator
     });
   }
   
-
   y += 10;
+  // --- DECLARATION ---
   doc.setFontSize(9);
   doc.setFont('helvetica', 'italic');
   doc.text('I hereby declare that the above information is true and correct to the best of my knowledge.', margin, y);
@@ -1064,7 +1236,6 @@ export const generateMedicalInsuranceForm = async (candidateData, employeeSignat
   const rawSig = employeeSignature || profile.signature || medical.employeeSignature;
   if (rawSig) {
     try {
-
       const sig = await processSignatureForPDF(rawSig);
       if (sig) {
         doc.addImage(sig, 'PNG', margin, y + 3, 40, 15);
@@ -1073,6 +1244,8 @@ export const generateMedicalInsuranceForm = async (candidateData, employeeSignat
       console.log('Signature image error:', e.message);
     }
   }
+  
+  doc.text('(' + fullName + ')', margin, y + 25);
   
   return doc.output('arraybuffer');
 };
@@ -1084,124 +1257,147 @@ export const generateSelfDeclarationForm = async (candidateData, employeeSignatu
   
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 15;
   let y = 15;
   
+  // --- HEADER ---
+  const logoBase64 = await getLogoBase64();
+  if (logoBase64) {
+    try {
+      doc.addImage(logoBase64, 'PNG', margin, 10, 40, 15);
+    } catch (e) {
+      console.error('Logo add error:', e);
+    }
+  }
 
-  doc.setFontSize(14);
+  doc.setTextColor(23, 72, 63); // Esme Teal
+  doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text('SELF DECLARATION FORM', pageWidth / 2, y, { align: 'center' });
-  y += 6;
-  doc.setFontSize(10);
+  doc.text('SELF DECLARATION FORM', pageWidth - margin, 20, { align: 'right' });
+  
+  doc.setTextColor(100, 100, 100);
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.text('ESME Consumer (P) Ltd', pageWidth / 2, y, { align: 'center' });
-  y += 8;
+  doc.text('ESME Consumer (P) Ltd', pageWidth - margin, 26, { align: 'right' });
   
-  doc.setLineWidth(0.3);
-  doc.line(margin, y, pageWidth - margin, y);
-  y += 10;
-  
-  const fullName = profile.fullName || [profile.firstName, profile.middleName, profile.lastName].filter(Boolean).join(' ') || '';
-  
+  y = 45;
 
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  doc.setFillColor(240, 240, 240);
-  doc.rect(margin, y - 3, pageWidth - 2 * margin, 6, 'F');
-  doc.text('EMPLOYEE DETAILS', margin + 2, y + 1);
-  y += 10;
-  
-  const addRow = (label, value) => {
-    doc.setFontSize(9);
+  // Helper functions (duplicated for safety to avoid scope issues)
+  const drawSectionHeader = (title) => {
+    doc.setFillColor(23, 72, 63); // Esme Teal
+    doc.roundedRect(margin, y, pageWidth - 2 * margin, 8, 1, 1, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text(label + ':', margin, y);
-    doc.setFont('helvetica', 'normal');
-    doc.text(String(value || 'N/A'), margin + 50, y);
-    y += 5;
+    doc.text(title.toUpperCase(), margin + 5, y + 5.5);
+    y += 12;
   };
-  
-  addRow('Full Name', fullName);
-  addRow("Father's Name", profile.fatherName || joining.fatherName);
-  addRow('Date of Birth', formatDate(profile.dateOfBirth || profile.dob || joining.dateOfBirth));
-  addRow('Permanent Address', (profile.permanentAddress || joining.permanentAddress || '').substring(0, 50));
-  addRow('Aadhaar Number', profile.aadhaarNumber || profile.aadharNumber || joining.aadhaarNumber);
-  addRow('PAN Number', profile.panNumber || joining.panNumber);
-  
 
+  const drawFieldBox = (label, value, x, width, height = 14) => {
+    doc.setDrawColor(200, 200, 200);
+    doc.setFillColor(250, 250, 250);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(100, 100, 100);
+    doc.text(label.toUpperCase(), x + 2, y + 4);
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 0, 0);
+    const splitText = doc.splitTextToSize(String(value || '-'), width - 4);
+    doc.text(splitText, x + 2, y + 9);
+    
+    doc.setDrawColor(230, 230, 230);
+    doc.line(x, y + height - 2, x + width - 2, y + height - 2);
+  };
+
+  const drawTwoColumn = (l1, v1, l2, v2) => {
+    const colWidth = (pageWidth - 2 * margin) / 2;
+    drawFieldBox(l1, v1, margin, colWidth);
+    if (l2) drawFieldBox(l2, v2, margin + colWidth, colWidth);
+    y += 15;
+  };
+
+  const fullName = profile.fullName || [profile.firstName, profile.middleName, profile.lastName].filter(Boolean).join(' ') || '';
+
+  // --- 1. EMPLOYEE DETAILS ---
+  drawSectionHeader('Employee Details');
+  drawTwoColumn('Full Name', fullName, 'Father\'s Name', profile.fatherName || joining.fatherName);
+  drawTwoColumn('Date of Birth', formatDate(profile.dateOfBirth || profile.dob || joining.dateOfBirth), 'Aadhaar Number', profile.aadhaarNumber || joining.aadhaarNumber);
+  drawTwoColumn('PAN Number', profile.panNumber || joining.panNumber, 'Permanent Address', (profile.permanentAddress || joining.permanentAddress || '').substring(0, 50));
+
+  // --- 2. PREVIOUS EMPLOYMENT ---
+  drawSectionHeader('Previous Employment');
+  if (joining.hasPreviousEmployment || joining.previousEmployer || decl.previousEmployer) {
+    drawTwoColumn('Employer', decl.previousEmployer || joining.previousEmployer, 'Designation', decl.previousDesignation || joining.previousDesignation);
+    drawTwoColumn('Employment Period', decl.employmentPeriod || ((joining.previousEmploymentFrom ? formatDate(joining.previousEmploymentFrom) : '') + ' - ' + (joining.previousEmploymentTo ? formatDate(joining.previousEmploymentTo) : '')), 'Reason for Leaving', decl.reasonForLeaving || joining.reasonForLeaving);
+  } else {
+    doc.setFontSize(9);
+    doc.setTextColor(150, 150, 150);
+    doc.text('No previous employment record found / Not Applicable', margin + 5, y + 5);
+    y += 12;
+  }
+
+  // --- 3. DECLARATION ---
   y += 5;
+  doc.setFillColor(245, 245, 245);
+  doc.roundedRect(margin, y, pageWidth - 2 * margin, 85, 2, 2, 'F');
+  
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.setFillColor(240, 240, 240);
-  doc.rect(margin, y - 3, pageWidth - 2 * margin, 6, 'F');
-  doc.text('PREVIOUS EMPLOYMENT DETAILS', margin + 2, y + 1);
-  y += 10;
-  
-  addRow('Previous Employer', decl.previousEmployer || joining.previousEmployer || 'N/A');
-  addRow('Designation', decl.previousDesignation || joining.previousDesignation || 'N/A');
-  addRow('Employment Period', decl.employmentPeriod || 'N/A');
-  addRow('Reason for Leaving', decl.reasonForLeaving || 'N/A');
-  
-
-  y += 5;
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  doc.setFillColor(240, 240, 240);
-  doc.rect(margin, y - 3, pageWidth - 2 * margin, 6, 'F');
-  doc.text('DECLARATION', margin + 2, y + 1);
-  y += 10;
+  doc.setTextColor(23, 72, 63);
+  doc.text('DECLARATION Statement', margin + 10, y + 10);
   
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  
-  const declarations = [
-    '1. I hereby declare that all the information provided by me in this form and supporting',
-    '   documents is true, complete, and correct to the best of my knowledge and belief.',
-    '',
-    '2. I understand that if any information provided by me is found to be false or misleading,',
-    '   it may result in termination of my employment without notice.',
-    '',
-    '3. I have not been convicted of any criminal offense and there are no pending criminal',
-    '   cases against me.',
-    '',
-    '4. I am not related to any employee of the company. If related, I have disclosed the',
-    '   relationship to the HR department.',
-    '',
+  doc.setTextColor(0, 0, 0);
+
+  const lines = [
+    '1. I hereby declare that all the information provided by me in this form and supporting documents is true,',
+    '   complete, and correct to the best of my knowledge and belief.',
+    '2. I understand that if any information provided by me is found to be false or misleading, it may result',
+    '   in termination of my employment without notice.',
+    '3. I have not been convicted of any criminal offense and there are no pending criminal cases against me.',
+    '4. I am not related to any employee of the company. If related, I have disclosed the relationship to HR.',
     '5. I agree to abide by all the rules, regulations, and policies of the company.',
-    '',
     '6. I authorize the company to verify my credentials and background as deemed necessary.'
   ];
   
-  declarations.forEach(line => {
-    doc.text(line, margin, y);
-    y += 4;
+  let lineY = y + 20;
+  lines.forEach(line => {
+    doc.text(line, margin + 10, lineY);
+    lineY += 5;
   });
   
+  y += 90;
 
-  y += 10;
-  doc.setFont('helvetica', 'normal');
-  doc.text('Place: ' + (decl.place || profile.currentCity || profile.city || '____________'), margin, y);
-  doc.text('Date: ' + formatDate(new Date()), pageWidth - margin - 40, y);
+  // --- SIGNATURES ---
+  const sigY = y;
   
-  y += 15;
-  doc.setFont('helvetica', 'bold');
-  doc.text('Employee Signature:', margin, y);
+  doc.setDrawColor(200, 200, 200);
+  doc.rect(margin, sigY, 60, 30);
   
   const rawSig = employeeSignature || profile.signature || decl.employeeSignature;
   if (rawSig) {
     try {
-
       const sig = await processSignatureForPDF(rawSig);
       if (sig) {
-        doc.addImage(sig, 'PNG', margin, y + 3, 40, 15);
+        doc.addImage(sig, 'PNG', margin + 5, sigY + 5, 50, 20);
       }
     } catch (e) {
       console.log('Signature image error:', e.message);
     }
   }
   
-  y += 25;
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.text('EMPLOYEE SIGNATURE', margin + 5, sigY + 38);
   doc.setFont('helvetica', 'normal');
-  doc.text('(' + fullName + ')', margin, y);
+  doc.text(fullName, margin + 5, sigY + 42);
+  doc.text('Date: ' + formatDate(new Date()), margin + 5, sigY + 46);
+  
+  doc.text('Place: ' + (decl.place || profile.currentCity || profile.city || 'New Delhi'), pageWidth - margin, sigY + 30, { align: 'right' });
   
   return doc.output('arraybuffer');
 };
