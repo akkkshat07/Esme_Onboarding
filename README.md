@@ -6,8 +6,6 @@ A comprehensive employee onboarding portal with document management, verificatio
 
 ✨ **Frontend**
 - Modern React 18 UI with Tailwind CSS
-- Dark mode enforced globally
-- Vanta.js Birds animated background
 - Smooth animations with Framer Motion
 - Form validation and document uploads
 - Real-time form status tracking
@@ -18,8 +16,6 @@ A comprehensive employee onboarding portal with document management, verificatio
 - MongoDB database
 - JWT authentication
 - Google Drive integration (optional)
-- Email verification with MSG91 OTP
-- Aadhaar verification support
 - Role-based access control (Candidate, Admin, Super Admin)
 
 📊 **Admin Features**
