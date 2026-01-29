@@ -1,0 +1,15 @@
+[
+  {
+    "email": "admin@esmeconsumer.in",
+    "password": "Esme@consumer2019",
+    "role": "admin",
+    "name": "HR Admin"
+  },
+  {
+    "name": "Akshat",
+    "email": "akshat@esme.in",
+    "mobile": "7454993082",
+    "password": "Ak&hat8218",
+    "role": "candidate"
+  }
+]
