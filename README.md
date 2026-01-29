@@ -1,45 +1,63 @@
-# Esme Onboarding Portal
+# ESME Onboarding Portal
 
-A comprehensive onboarding solution for Esme Consumer Pvt Ltd, featuring a candidate portal for submitting details and documents, and an admin dashboard for managing applications.
+A comprehensive employee onboarding portal with document management, verification, and admin dashboard.
 
 ## Features
 
-- **Candidate Portal**: 
-  - Complete personal information forms
-  - Digital signature capture
-  - Document upload to Google Drive
-  - Generate PDF forms automatically (Joining Form, Form F, Form 11, etc.)
-  - Real-time status tracking
+✨ **Frontend**
+- Modern React 18 UI with Tailwind CSS
+- Dark mode enforced globally
+- Vanta.js Birds animated background
+- Smooth animations with Framer Motion
+- Form validation and document uploads
+- Real-time form status tracking
+- PDF generation for checklists and forms
 
-- **Admin Dashboard**:
-  - View all candidates
-  - Review submitted documents
-  - Download generated PDF forms
-  - Sync data to Google Sheets (BGV, Payroll, Attendance)
-  - Dark mode support
+🔧 **Backend**
+- Express.js REST API
+- MongoDB database
+- JWT authentication
+- Google Drive integration (optional)
+- Email verification with MSG91 OTP
+- Aadhaar verification support
+- Role-based access control (Candidate, Admin, Super Admin)
 
-## Project Structure
+📊 **Admin Features**
+- Candidate management dashboard
+- Document verification
+- Status tracking and updates
+- Bulk operations
+- Google Sheets integration
+- BGV (Background Verification) tracking
 
-- `esme-consumer-portal/`: Main application folder
-  - `src/`: React frontend source code
-  - `server/`: Node.js/Express backend API
-  
+## Quick Start
+
+### Development
+```bash
+cd esme-consumer-portal
+npm install
+npm run dev
+```
+
+### Production (Ubuntu Server)
+```bash
+sudo bash deploy.sh
+```
+
 ## Tech Stack
 
-- **Frontend**: React, Vite, Tailwind CSS
-- **Backend**: Node.js, Express
-- **Database**: MongoDB
-- **Integrations**: Google Drive API, Google Sheets API
-- **PDF Generation**: pdf-lib
+- **Frontend**: React 18.2.0, Vite 5.4.21, Tailwind CSS, Framer Motion
+- **Backend**: Express.js, MongoDB, Mongoose
+- **DevOps**: PM2, Nginx, Let's Encrypt
 
 ## Setup
 
 1. **Prerequisites**
-   - Node.js installed
-   - MongoDB running
-   - Google Cloud Service Account credentials
+   - Node.js v16+
+   - npm v7+
+   - MongoDB (local or Atlas)
 
-2. **Installation**
+2. **Development Installation**
    ```bash
    cd esme-consumer-portal
    npm install
@@ -47,7 +65,39 @@ A comprehensive onboarding solution for Esme Consumer Pvt Ltd, featuring a candi
    npm install
    ```
 
-3. **Configuration**
+3. **Environment Configuration**
+   Create `.env` in `server/`:
+   ```env
+   MONGODB_URI=mongodb://localhost:27017/esme_onboarding
+   PORT=3000
+   NODE_ENV=development
+   ```
+
+4. **Run Development**
+   ```bash
+   # Terminal 1: Backend
+   cd esme-consumer-portal/server && npm start
+   
+   # Terminal 2: Frontend
+   cd esme-consumer-portal && npm run dev
+   ```
+
+5. **Access Application**
+   - Frontend: http://localhost:5174
+   - API: http://localhost:3000/api
+
+## Production Deployment
+
+For detailed deployment instructions, see `DEPLOYMENT_GUIDE.md`
+
+### Quick Deploy (Ubuntu)
+```bash
+sudo bash deploy.sh
+```
+
+### Default Admin
+- Email: admin@esmeconsumer.in
+- Password: Esme@consumer2019
    - Place `credentials.json` in the `server/` directory.
    - Create a `.env` file in `server/` with:
      - `PORT`
