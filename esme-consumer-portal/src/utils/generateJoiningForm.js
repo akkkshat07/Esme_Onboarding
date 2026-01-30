@@ -1,4 +1,4 @@
-
+import { uploadPdfToDrive } from './driveUpload';
 
 export const generateJoiningFormPDF = async (candidate) => {
   const jsPDF = (await import('jspdf')).default;
@@ -235,4 +235,19 @@ export const downloadJoiningFormPDF = async (candidate) => {
   const candidateName = candidate.name ? candidate.name.replace(/\s+/g, '_') : 'Candidate';
   const fileName = candidateName + '_Joining_Form_' + new Date().toISOString().split('T')[0] + '.pdf';
   doc.save(fileName);
+  
+  // Upload to Google Drive if email available
+  if (candidate.email) {
+    try {
+      const pdfBlob = doc.output('blob');
+      const arrayBuffer = await pdfBlob.arrayBuffer();
+      const pdfBytes = new Uint8Array(arrayBuffer);
+      const result = await uploadPdfToDrive(candidate.email, pdfBytes, 'Employee_Joining_Form', fileName);
+      if (result.success) {
+        console.log('✅ Joining Form uploaded to Google Drive');
+      }
+    } catch (err) {
+      console.log('⚠️ Drive upload skipped:', err.message);
+    }
+  }
 };

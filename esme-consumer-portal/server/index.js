@@ -15,6 +15,7 @@ import {
   handleAuthCallback, 
   createCandidateFolder, 
   uploadFileToDrive, 
+  uploadOrReplacePdf,
   listFolderFiles,
   getDriveStatus 
 } from './services/googleDriveOAuth.js';
@@ -203,17 +204,46 @@ app.get('/api/candidate/:email', async (req, res) => {
 app.post('/api/save-profile', async (req, res) => {
   try {
     const { email, ...profileData } = req.body;
+    
+    // Find user first to get name for folder creation
+    const existingUser = await User.findOne({ email });
+    if (!existingUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    let driveFolder = existingUser.driveFolder;
+
+    // Create Google Drive folder if connected and folder doesn't exist
+    if (hasValidToken() && !driveFolder?.folderId) {
+      try {
+        const candidateName = profileData.fullName || existingUser.name;
+        const department = profileData.department || profileData.profession || 'New Joiner';
+        const city = profileData.currentCity || 'Unspecified';
+        
+        driveFolder = await createCandidateFolder(candidateName, department, city);
+        console.log(`📁 Created Google Drive folder for ${candidateName}: ${driveFolder.folderLink}`);
+      } catch (folderError) {
+        console.error('⚠️ Could not create Drive folder:', folderError.message);
+      }
+    }
+
+    // Update user with profile data and folder info
     const user = await User.findOneAndUpdate(
       { email },
-      { profileData, status: 'completed' },
+      { 
+        profileData, 
+        status: 'completed',
+        ...(driveFolder && { driveFolder })
+      },
       { new: true }
     );
-    
 
-    
-
-    res.json({ success: true });
+    res.json({ 
+      success: true,
+      driveFolder: driveFolder || null
+    });
   } catch (err) {
+    console.error('❌ Save profile error:', err.message);
     res.status(500).json({ message: err.message });
   }
 });
@@ -345,6 +375,104 @@ app.post('/api/upload', handleUpload, async (req, res) => {
   }
 });
 
+// Upload generated PDF to Google Drive
+app.post('/api/upload-pdf-to-drive', async (req, res) => {
+  try {
+    const { email, pdfBase64, formName, fileName } = req.body;
+    
+    if (!email || !pdfBase64 || !formName) {
+      return res.status(400).json({ message: 'Missing required fields: email, pdfBase64, formName' });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    console.log(`📄 Uploading generated PDF: ${formName} for ${user.name}`);
+
+    // Check if Google Drive is connected
+    if (!hasValidToken()) {
+      return res.status(400).json({ message: 'Google Drive not connected' });
+    }
+
+    let driveFolder = user.driveFolder;
+
+    // Create candidate folder if doesn't exist
+    if (!driveFolder?.folderId) {
+      driveFolder = await createCandidateFolder(
+        user.name,
+        user.profileData?.profession || 'New Joiner',
+        user.profileData?.currentCity || 'Unspecified'
+      );
+      await User.findByIdAndUpdate(user._id, { driveFolder });
+      console.log(`📁 Created Drive folder for ${user.name}`);
+    }
+
+    // Convert base64 to buffer
+    const pdfBuffer = Buffer.from(pdfBase64, 'base64');
+    
+    // Generate proper filename
+    const candidateName = user.name.replace(/\s+/g, '_');
+    const role = (user.profileData?.profession || 'New_Joiner').replace(/\s+/g, '_');
+    const finalFileName = fileName || `${formName}_${candidateName}_${role}.pdf`;
+
+    // Delete existing file with same name if exists (for updates)
+    try {
+      const deleted = await findAndDeleteFile(driveFolder.folderId, formName);
+      if (deleted) {
+        console.log(`🗑️ Deleted old version of ${formName}`);
+      }
+    } catch (deleteErr) {
+      console.log('⚠️ No existing file to delete or error:', deleteErr.message);
+    }
+
+    // Upload the PDF buffer to Drive
+    const driveFile = await uploadBufferToDrive(
+      driveFolder.folderId,
+      pdfBuffer,
+      finalFileName,
+      'application/pdf'
+    );
+
+    console.log(`✅ Uploaded to Drive: ${driveFile.fileName}`);
+
+    // Create document record
+    const documentRecord = {
+      type: formName,
+      fileName: finalFileName,
+      driveFileId: driveFile.fileId,
+      driveViewLink: driveFile.viewLink,
+      driveDownloadLink: driveFile.downloadLink,
+      uploadedAt: new Date()
+    };
+
+    // Check if this form type already exists and update, otherwise add
+    const existingDocIndex = user.documents?.findIndex(d => d.type === formName);
+    if (existingDocIndex >= 0) {
+      // Update existing document record
+      await User.findOneAndUpdate(
+        { email, 'documents.type': formName },
+        { $set: { 'documents.$': documentRecord } }
+      );
+    } else {
+      // Add new document record
+      await User.findOneAndUpdate(
+        { email },
+        { $push: { documents: documentRecord } }
+      );
+    }
+
+    res.json({ 
+      success: true, 
+      document: documentRecord,
+      folderLink: driveFolder?.folderLink
+    });
+  } catch (err) {
+    console.error('❌ PDF upload error:', err.message);
+    res.status(500).json({ message: err.message });
+  }
+});
 
 app.get('/api/candidates/:id', async (req, res) => {
   try {

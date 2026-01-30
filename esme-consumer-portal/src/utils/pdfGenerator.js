@@ -1,6 +1,7 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { jsPDF } from 'jspdf';
 import EsmeLogo from '../assets/Esme-Logo-01.png';
+import { uploadPdfToDrive } from './driveUpload';
 
 const PDF_BASE_PATH = '/forms';
 
@@ -358,21 +359,78 @@ export const fillForm11 = async (candidateData, employeeSignature, adminSignatur
       setCheckbox(form, 'Transgender', true);
     }
     
-
-    const mobile = String(profile.mobileNumber || profile.mobile || profile.phone || form11.mobileNumber || joining.mobileNumber || '').replace(/\D/g, '').slice(-10);
+    // Mobile Number - check all possible sources
+    const mobile = String(
+      profile.mobileNumber || 
+      profile.mobile || 
+      profile.phone || 
+      profile.phoneNumber ||
+      form11.mobileNumber || 
+      joining.mobileNumber ||
+      joining.phone ||
+      candidateData.mobileNumber ||
+      candidateData.phone ||
+      ''
+    ).replace(/\D/g, '').slice(-10);
     setFieldWithStyle('mobile', mobile, 10, false, false, true);
-    setFieldWithStyle('email', profile.email || profile.personalEmail || form11.email || joining.personalEmail || '', 9);
     
-
-    const aadhaar = String(profile.aadhaarNumber || profile.aadharNumber || form11.aadhaarNumber || joining.aadhaarNumber || '').replace(/\D/g, '');
-    const pan = String(profile.panNumber || form11.panNumber || joining.panNumber || '').toUpperCase().trim();
+    // Email - check all possible sources  
+    const email = profile.email || 
+      profile.personalEmail || 
+      profile.officialEmail ||
+      form11.email || 
+      joining.personalEmail ||
+      joining.email ||
+      candidateData.email ||
+      '';
+    setFieldWithStyle('email', email, 9);
+    
+    // Aadhaar Number - check all possible sources
+    const aadhaar = String(
+      profile.aadhaarNumber || 
+      profile.aadharNumber || 
+      profile.aadhaar ||
+      form11.aadhaarNumber || 
+      joining.aadhaarNumber ||
+      candidateData.aadhaarNumber ||
+      ''
+    ).replace(/\D/g, '');
     setFieldWithStyle('aadharNumber', aadhaar, 10, false, false, true);
+    
+    // PAN Number - check all possible sources
+    const pan = String(
+      profile.panNumber || 
+      profile.pan ||
+      form11.panNumber || 
+      joining.panNumber ||
+      candidateData.panNumber ||
+      ''
+    ).toUpperCase().trim();
     setFieldWithStyle('panNumber', pan, 10, false, true, true);
     
-
-    const accountNo = String(profile.bankAccountNumber || profile.accountNumber || form11.bankAccountNumber || joining.bankAccountNumber || '').trim();
-    const ifsc = String(profile.ifscCode || profile.bankIfscCode || form11.ifscCode || joining.ifscCode || '').toUpperCase().trim();
+    // Bank Account Number - check all possible sources
+    const accountNo = String(
+      profile.bankAccountNumber || 
+      profile.accountNumber || 
+      profile.bankAccount ||
+      form11.bankAccountNumber || 
+      joining.bankAccountNumber ||
+      joining.accountNumber ||
+      candidateData.bankAccountNumber ||
+      ''
+    ).trim();
     setFieldWithStyle('accountNumber', accountNo, 10, false, false, true);
+    
+    // IFSC Code - check all possible sources
+    const ifsc = String(
+      profile.ifscCode || 
+      profile.bankIfscCode || 
+      profile.ifsc ||
+      form11.ifscCode || 
+      joining.ifscCode ||
+      candidateData.ifscCode ||
+      ''
+    ).toUpperCase().trim();
     setFieldWithStyle('ifscCode', ifsc, 10, false, true, true);
     
 
@@ -824,6 +882,10 @@ export const fillPFNomination = async (candidateData, employeeSignature, adminSi
 export const generateEmployeeJoiningForm = async (candidateData, employeeSignature) => {
   const profile = candidateData.profileData || candidateData || {};
   const joining = candidateData.joiningFormData || profile.joiningFormData || {};
+  const educationList = joining.educationList || profile.educationList || [];
+  const experienceList = joining.experienceList || profile.experienceList || [];
+  const familyDetails = joining.familyDetails || profile.familyDetails || {};
+  const references = joining.references || profile.references || [];
   
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -894,8 +956,6 @@ export const generateEmployeeJoiningForm = async (candidateData, employeeSignatu
     const splitText = doc.splitTextToSize(displayValue, textWidth);
     doc.text(splitText, x + 2, y + 9);
     
-    // Border (optional, or just use spacing)
-    // doc.rect(x, y, width, height); // Minimal look without field borders is often cleaner, but let's add a bottom line
     doc.setDrawColor(230, 230, 230);
     doc.line(x, y + height - 2, x + width - 2, y + height - 2);
   };
@@ -917,35 +977,61 @@ export const generateEmployeeJoiningForm = async (candidateData, employeeSignatu
     y += 15;
   };
 
-  const fullName = profile.fullName || [profile.firstName, profile.middleName, profile.lastName].filter(Boolean).join(' ') || '';
-
-  // --- 1. PERSONAL DETAILS ---
-  drawSectionHeader('Personal Details');
-  drawTwoColumn('Full Name', fullName, 'Date of Birth', formatDate(profile.dateOfBirth || profile.dob || joining.dateOfBirth));
-  drawTwoColumn('Father\'s Name', profile.fatherName || joining.fatherName, 'Mother\'s Name', profile.motherName || joining.motherName);
-  drawTwoColumn('Spouse Name', profile.spouseName || joining.spouseName, 'Gender', profile.gender || joining.gender);
-  drawThreeColumn('Marital Status', profile.maritalStatus || joining.maritalStatus, 'Blood Group', profile.bloodGroup || joining.bloodGroup, 'Religion', profile.religion || joining.religion);
-  drawTwoColumn('Nationality', profile.nationality || 'Indian', 'Employee Code', profile.employeeId || joining.employeeCode || joining.employeeId || 'TBD');
-
-  // --- 2. CONTACT DETAILS ---
-  drawSectionHeader('Contact Information');
-  drawTwoColumn('Mobile Number', profile.mobileNumber || joining.mobileNumber, 'Alternate Mobile', joining.alternateMobile || joining.alternateMobileNumber);
-  drawTwoColumn('Personal Email', profile.email || joining.personalEmail, 'Official Email', profile.officialEmail || joining.officialEmail || 'TBD');
-  
-  y += 5;
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(23, 72, 63);
-  doc.text('Emergency Contact', margin + 2, y);
-  y += 5;
-  drawThreeColumn('Name', joining.emergencyContactName, 'Relation', joining.emergencyContactRelation, 'Number', joining.emergencyContactPhone || joining.emergencyContactMobile);
-  if (joining.emergencyContactAddress) {
+  const drawFourColumn = (l1, v1, l2, v2, l3, v3, l4, v4) => {
     checkPageBreak(15);
-    drawFieldBox('Emergency Address', joining.emergencyContactAddress, margin, pageWidth - 2 * margin);
+    const colWidth = (pageWidth - 2 * margin) / 4;
+    drawFieldBox(l1, v1, margin, colWidth);
+    if (l2) drawFieldBox(l2, v2, margin + colWidth, colWidth);
+    if (l3) drawFieldBox(l3, v3, margin + 2 * colWidth, colWidth);
+    if (l4) drawFieldBox(l4, v4, margin + 3 * colWidth, colWidth);
     y += 15;
-  }
+  };
 
-  // --- 3. ADDRESS DETAILS ---
+  const fullName = profile.fullName || joining.fullName || [profile.firstName, profile.middleName, profile.lastName].filter(Boolean).join(' ') || '';
+
+  // --- 1. EMPLOYMENT DETAILS (At top as per form) ---
+  drawSectionHeader('Employment Details');
+  drawThreeColumn(
+    'Date of Joining (DOJ)', formatDate(profile.dateOfJoining || joining.dateOfJoining),
+    'Designation', profile.designation || joining.designation,
+    'Interviewed By', joining.interviewedBy || '-'
+  );
+  drawThreeColumn(
+    'Head Quarter (HQ)', joining.headQuarter || '-',
+    'Division', joining.division || profile.entity || '-',
+    'Department', joining.department || profile.department || profile.entity || '-'
+  );
+  drawThreeColumn(
+    'Reporting Manager', joining.reportingManager || '-',
+    'RM Designation', joining.reportingManagerDesignation || '-',
+    'Work Location', profile.workLocation || joining.workLocation || '-'
+  );
+  drawTwoColumn('Employment Type', profile.employmentType || joining.employmentType || 'Permanent', 'Employee Code', profile.employeeId || joining.employeeCode || 'TBD');
+
+  // --- 2. PERSONAL DETAILS ---
+  drawSectionHeader('Personal Details');
+  drawThreeColumn(
+    'Full Name', fullName,
+    'Date of Birth', formatDate(profile.dateOfBirth || profile.dob || joining.dateOfBirth),
+    'Age', joining.age || calculateAgeFromDOB(profile.dateOfBirth || joining.dateOfBirth) || '-'
+  );
+  drawThreeColumn(
+    'Gender', profile.gender || joining.gender,
+    'Blood Group', profile.bloodGroup || joining.bloodGroup,
+    'Marital Status', profile.maritalStatus || joining.maritalStatus
+  );
+  drawTwoColumn('Nationality', profile.nationality || joining.nationality || 'Indian', 'Religion', profile.religion || joining.religion || '-');
+
+  // --- 3. CONTACT DETAILS ---
+  drawSectionHeader('Contact Information');
+  drawThreeColumn(
+    'Contact No. (Personal)', profile.mobileNumber || joining.mobileNumber,
+    'Contact No. (Office)', joining.officeContactNo || '-',
+    'Alternate Mobile', joining.alternateMobile || joining.alternateMobileNumber || '-'
+  );
+  drawTwoColumn('E-Mail ID (Personal)', profile.email || joining.personalEmail, 'E-Mail ID (Official)', profile.officialEmail || joining.officialEmail || 'TBD');
+
+  // --- 4. ADDRESS DETAILS ---
   drawSectionHeader('Address Details');
   
   checkPageBreak(25);
@@ -978,17 +1064,70 @@ export const generateEmployeeJoiningForm = async (candidateData, employeeSignatu
   drawFieldBox('Full Address', permAddr, margin, pageWidth - 2 * margin, 12);
   y += 15;
 
-  // --- 4. PROFESSIONAL DETAILS ---
-  drawSectionHeader('Professional Details');
-  drawTwoColumn('Date of Joining', formatDate(profile.dateOfJoining || joining.dateOfJoining), 'Department', profile.department || joining.department);
-  drawTwoColumn('Designation', profile.designation || joining.designation, 'Reporting Manager', joining.reportingManager || 'TBD');
-  drawTwoColumn('Work Location', profile.workLocation || joining.workLocation, 'Employment Type', profile.employmentType || joining.employmentType || 'Permanent');
+  // --- 5. IDENTITY DOCUMENTS ---
+  drawSectionHeader('Identity Documents');
+  drawThreeColumn(
+    'PAN Number', profile.panNumber || joining.panNumber,
+    'Aadhaar Number', profile.aadhaarNumber || joining.aadhaarNumber,
+    'Driving License', profile.drivingLicense || joining.drivingLicense || '-'
+  );
+  
+  // Passport details
+  if (joining.hasPassport || profile.passportNumber || joining.passportNumber) {
+    drawThreeColumn(
+      'Passport Number', profile.passportNumber || joining.passportNumber || '-',
+      'Passport Validity', formatDate(profile.passportValidity || joining.passportValidity) || '-',
+      'Issue Place', joining.passportIssuePlace || '-'
+    );
+  }
 
-  // --- 5. EDUCATIONAL QUALIFICATION ---
-  drawSectionHeader('Educational Qualification');
-  if (joining.highestQualification || joining.university) {
-    drawTwoColumn('Qualification', joining.highestQualification, 'University / Board', joining.university);
-    drawThreeColumn('Year of Passing', joining.yearOfPassing, 'Specialization', joining.specialization, 'Percentage/CGPA', '-');
+  // --- 6. EDUCATIONAL BACKGROUND ---
+  drawSectionHeader('Educational Background');
+  doc.setFontSize(7);
+  doc.setTextColor(100, 100, 100);
+  doc.text('* Mention your details from Highest Education to High School', margin + 2, y);
+  y += 5;
+  
+  if (educationList.length > 0) {
+    // Table header
+    checkPageBreak(10);
+    doc.setFillColor(240, 240, 240);
+    doc.rect(margin, y, pageWidth - 2 * margin, 8, 'F');
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(50, 50, 50);
+    const eduColWidths = [35, 45, 20, 20, 30, 30];
+    let eduX = margin + 2;
+    ['Qualification', 'University/Institute', 'Year', '% / CGPA', 'Subjects', 'Certifications'].forEach((h, i) => {
+      doc.text(h.toUpperCase(), eduX, y + 5);
+      eduX += eduColWidths[i];
+    });
+    y += 10;
+    
+    // Table rows
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(0, 0, 0);
+    educationList.forEach((edu, idx) => {
+      checkPageBreak(10);
+      let eduX = margin + 2;
+      [
+        edu.qualification || '-',
+        edu.university || '-',
+        edu.yearOfPassing || '-',
+        edu.percentage || '-',
+        edu.subjects || '-',
+        edu.certifications || '-'
+      ].forEach((val, i) => {
+        const text = doc.splitTextToSize(val, eduColWidths[i] - 3);
+        doc.text(text[0], eduX, y + 5);
+        eduX += eduColWidths[i];
+      });
+      doc.setDrawColor(230, 230, 230);
+      doc.line(margin, y + 7, pageWidth - margin, y + 7);
+      y += 9;
+    });
+    y += 3;
   } else {
     doc.setFontSize(9);
     doc.setTextColor(150, 150, 150);
@@ -996,11 +1135,52 @@ export const generateEmployeeJoiningForm = async (candidateData, employeeSignatu
     y += 10;
   }
 
-  // --- 6. PREVIOUS EMPLOYMENT ---
-  drawSectionHeader('Previous Employment');
-  if (joining.hasPreviousEmployment || joining.previousEmployer) {
-    drawTwoColumn('Previous Employer', joining.previousEmployer, 'Last Designation', joining.previousDesignation);
-    drawThreeColumn('From Date', formatDate(joining.previousEmploymentFrom), 'To Date', formatDate(joining.previousEmploymentTo), 'Reason for Leaving', joining.reasonForLeaving);
+  // --- 7. WORK EXPERIENCE DETAILS ---
+  drawSectionHeader('Work Experience Details');
+  doc.setFontSize(7);
+  doc.setTextColor(100, 100, 100);
+  doc.text('** Mention your details from Last Organization to First Organization', margin + 2, y);
+  y += 5;
+  
+  if (experienceList.length > 0) {
+    experienceList.forEach((exp, idx) => {
+      checkPageBreak(50);
+      doc.setFillColor(248, 248, 248);
+      doc.rect(margin, y, pageWidth - 2 * margin, 45, 'F');
+      
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(23, 72, 63);
+      doc.text(`Experience #${idx + 1}: ${exp.organization || '-'}`, margin + 3, y + 6);
+      y += 8;
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(8);
+      
+      // Row 1: Organization, DOJ, DOL
+      doc.text(`Designation at Joining: ${exp.designation || '-'}`, margin + 3, y + 5);
+      doc.text(`Designation at Leaving: ${exp.designationAtLeaving || '-'}`, margin + 65, y + 5);
+      y += 7;
+      
+      // Row 2: Salary
+      doc.text(`Salary at Joining: ₹${exp.salaryAtJoining || '-'}`, margin + 3, y + 5);
+      doc.text(`Salary at Leaving: ₹${exp.salaryAtLeaving || '-'}`, margin + 65, y + 5);
+      doc.text(`Contact: ${exp.contactNo || '-'}`, margin + 130, y + 5);
+      y += 7;
+      
+      // Row 3: Dates
+      doc.text(`DOJ: ${formatDate(exp.doj) || '-'}`, margin + 3, y + 5);
+      doc.text(`DOL: ${formatDate(exp.dol) || '-'}`, margin + 50, y + 5);
+      doc.text(`Reporting To: ${exp.reportingTo || '-'}`, margin + 95, y + 5);
+      y += 7;
+      
+      // Row 4: Responsibility & Reason
+      doc.text(`Job Responsibility: ${exp.jobResponsibility || '-'}`, margin + 3, y + 5);
+      y += 7;
+      doc.text(`Reason for Leaving: ${exp.reasonForLeaving || '-'}`, margin + 3, y + 5);
+      y += 12;
+    });
   } else {
     doc.setFontSize(9);
     doc.setTextColor(150, 150, 150);
@@ -1008,20 +1188,144 @@ export const generateEmployeeJoiningForm = async (candidateData, employeeSignatu
     y += 10;
   }
 
-  // --- 7. STATUTORY & BANK DETAILS ---
-  drawSectionHeader('Statutory & Bank Information');
-  drawTwoColumn('Aadhaar Number', profile.aadhaarNumber || joining.aadhaarNumber, 'PAN Number', profile.panNumber || joining.panNumber);
-  drawTwoColumn('Passport Number', profile.passportNumber || joining.passportNumber, 'Driving License', profile.drivingLicense || joining.drivingLicense);
+  // --- 8. FAMILY DETAILS ---
+  drawSectionHeader('Family Details');
   
+  // Parents
+  drawThreeColumn(
+    'Father\'s Name', profile.fatherName || joining.fatherName || familyDetails.fatherName,
+    'Father\'s DOB', formatDate(familyDetails.fatherDOB) || '-',
+    'Father\'s Occupation', familyDetails.fatherOccupation || '-'
+  );
+  drawThreeColumn(
+    'Mother\'s Name', profile.motherName || joining.motherName || familyDetails.motherName,
+    'Mother\'s DOB', formatDate(familyDetails.motherDOB) || '-',
+    'Mother\'s Occupation', familyDetails.motherOccupation || '-'
+  );
+  
+  // Spouse (if married)
+  if (profile.maritalStatus === 'Married' || joining.maritalStatus === 'Married') {
+    drawThreeColumn(
+      'Spouse Name', profile.spouseName || joining.spouseName || familyDetails.spouseName,
+      'Spouse DOB', formatDate(familyDetails.spouseDOB) || '-',
+      'Spouse Occupation', familyDetails.spouseOccupation || '-'
+    );
+    // Marriage details
+    drawThreeColumn(
+      'Marriage Date', formatDate(familyDetails.marriageDate) || '-',
+      'Marriage Place', familyDetails.marriagePlace || '-',
+      'Anniversary', formatDate(familyDetails.marriageAnniversary) || '-'
+    );
+  }
+  
+  // Children
+  if (familyDetails.children && familyDetails.children.length > 0) {
+    checkPageBreak(10);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(100, 100, 100);
+    doc.text('Children:', margin + 2, y + 3);
+    y += 6;
+    familyDetails.children.forEach((child, idx) => {
+      drawThreeColumn(
+        `Child ${idx + 1} Name`, child.name || '-',
+        'DOB', formatDate(child.dob) || '-',
+        'Occupation', child.occupation || '-'
+      );
+    });
+  }
+  
+  // Siblings
+  if (familyDetails.siblings && familyDetails.siblings.length > 0) {
+    checkPageBreak(10);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(100, 100, 100);
+    doc.text('Siblings:', margin + 2, y + 3);
+    y += 6;
+    familyDetails.siblings.forEach((sibling, idx) => {
+      drawThreeColumn(
+        `Sibling ${idx + 1} Name`, sibling.name || '-',
+        'DOB', formatDate(sibling.dob) || '-',
+        'Occupation', sibling.occupation || '-'
+      );
+    });
+  }
+
+  // --- 9. REFERENCE DETAILS ---
+  drawSectionHeader('Professional References');
+  doc.setFontSize(7);
+  doc.setTextColor(100, 100, 100);
+  doc.text('*** Please give professional references from Last organization', margin + 2, y);
   y += 5;
-  doc.setDrawColor(200, 200, 200);
-  doc.line(margin, y, pageWidth - margin, y);
-  y += 10;
+  
+  if (references.length > 0) {
+    references.forEach((ref, idx) => {
+      drawFourColumn(
+        'Name', ref.name || '-',
+        'Contact No.', ref.contactNo || '-',
+        'Designation', ref.designation || '-',
+        'Organization', ref.organization || '-'
+      );
+    });
+  } else {
+    doc.setFontSize(9);
+    doc.setTextColor(150, 150, 150);
+    doc.text('No references provided', margin + 5, y + 5);
+    y += 10;
+  }
 
-  drawTwoColumn('Bank Name', profile.bankName || joining.bankName, 'Account Number', profile.bankAccountNumber || joining.bankAccountNumber);
-  drawTwoColumn('Branch', profile.bankBranch || joining.bankBranch, 'IFSC Code', profile.ifscCode || joining.ifscCode);
+  // --- 10. EMERGENCY CONTACT ---
+  drawSectionHeader('In Case of Emergency');
+  drawThreeColumn(
+    'Contact Person Name', joining.emergencyContactName,
+    'Relation', joining.emergencyContactRelation,
+    'Contact No.', joining.emergencyContactMobile || joining.emergencyContactPhone
+  );
+  if (joining.emergencyContactAddress) {
+    checkPageBreak(15);
+    drawFieldBox('Address', joining.emergencyContactAddress, margin, pageWidth - 2 * margin);
+    y += 15;
+  }
 
-  // --- 8. DECLARATION ---
+  // --- 11. OTHER DETAILS (Related Employee) ---
+  if (joining.isRelatedToEmployee) {
+    drawSectionHeader('Related Employee Details');
+    drawTwoColumn(
+      'Related Employee Name', joining.relatedEmployeeName || '-',
+      'Designation', joining.relatedEmployeeDesignation || '-'
+    );
+    drawThreeColumn(
+      'Location', joining.relatedEmployeeLocation || '-',
+      'Head Quarter', joining.relatedEmployeeHQ || '-',
+      'Your Relation', joining.relationWithEmployee || '-'
+    );
+  }
+
+  // --- 12. PF/ESIC Details ---
+  if (joining.hasPreviousPF || joining.uanNumber || joining.esicNumber) {
+    drawSectionHeader('PF / ESIC Details');
+    drawThreeColumn(
+      'Universal Account No. (UAN)', joining.uanNumber || '-',
+      'Previous PF Number', joining.previousPFNumber || '-',
+      'ESIC Number', joining.esicNumber || '-'
+    );
+  }
+
+  // --- 13. BANK DETAILS ---
+  drawSectionHeader('Bank Account Details');
+  drawThreeColumn(
+    'Bank Name', profile.bankName || joining.bankName,
+    'Branch Name', profile.bankBranch || joining.bankBranch || '-',
+    'Account Holder Name', joining.accountHolderName || fullName
+  );
+  drawThreeColumn(
+    'Account Number', profile.bankAccountNumber || joining.bankAccountNumber,
+    'IFSC Code', profile.ifscCode || joining.ifscCode,
+    'MICR Code', joining.micrCode || '-'
+  );
+
+  // --- 14. DECLARATION ---
   checkPageBreak(60);
   doc.setFillColor(245, 245, 245);
   doc.roundedRect(margin, y, pageWidth - 2 * margin, 50, 2, 2, 'F');
@@ -1034,26 +1338,33 @@ export const generateEmployeeJoiningForm = async (candidateData, employeeSignatu
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(0, 0, 0);
-  const declarationText = "I hereby declare that the particulars given above are true and correct to the best of my knowledge and belief. I understand that if any of the information is found to be false or incorrect, my employment is liable to be terminated without any notice. I also agree to abide by the rules and regulations of ESME Consumer (P) Ltd.";
+  const declarationText = "I declare that the information given, herein above, is true & correct to the best of my knowledge & belief. I understand that if the above information is found false or incorrect, at any time during the course of my employment, my services will be terminated forthwith without any notice.";
   const splitDecl = doc.splitTextToSize(declarationText, pageWidth - 2 * margin - 20);
   doc.text(splitDecl, margin + 10, y + 20);
   
   y += 65;
 
   // --- SIGNATURES ---
-  checkPageBreak(40);
+  checkPageBreak(50);
   const sigY = y;
+  
+  // Declaration details
+  doc.setFontSize(9);
+  doc.setTextColor(0, 0, 0);
+  doc.text(`Date: ${formatDate(joining.declarationDate || new Date())}`, margin, sigY);
+  doc.text(`Place: ${joining.declarationPlace || profile.currentCity || '-'}`, margin + 60, sigY);
+  y += 10;
   
   // Box for Employee Signature
   doc.setDrawColor(200, 200, 200);
-  doc.rect(margin, sigY, 60, 30);
+  doc.rect(margin, y, 60, 30);
   
   const rawSig = employeeSignature || profile.signature || joining.employeeSignature;
   if (rawSig) {
     try {
       const sig = await processSignatureForPDF(rawSig);
       if (sig) {
-        doc.addImage(sig, 'PNG', margin + 5, sigY + 5, 50, 20);
+        doc.addImage(sig, 'PNG', margin + 5, y + 5, 50, 20);
       }
     } catch (e) {
       console.log('Signature image error:', e.message);
@@ -1062,22 +1373,42 @@ export const generateEmployeeJoiningForm = async (candidateData, employeeSignatu
   
   doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
-  doc.text('EMPLOYEE SIGNATURE', margin + 5, sigY + 38);
+  doc.text('APPLICANT\'S SIGNATURE', margin + 5, y + 38);
   doc.setFont('helvetica', 'normal');
-  doc.text(fullName, margin + 5, sigY + 42);
-  doc.text('Date: ' + formatDate(new Date()), margin + 5, sigY + 46);
+  doc.text(fullName, margin + 5, y + 42);
   
   // Box for HR Signature
   doc.setDrawColor(200, 200, 200);
-  doc.rect(pageWidth - margin - 60, sigY, 60, 30);
+  doc.rect(pageWidth - margin - 60, y, 60, 30);
   
   doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
-  doc.text('FOR ESME CONSUMER (P) LTD', pageWidth - margin - 55, sigY + 38);
+  doc.text('FOR ESME CONSUMER (P) LTD', pageWidth - margin - 55, y + 38);
   doc.setFont('helvetica', 'normal');
-  doc.text('Authorized Signatory', pageWidth - margin - 55, sigY + 42);
+  doc.text('Authorized Signatory', pageWidth - margin - 55, y + 42);
+  
+  // --- FOOTER on last page ---
+  y += 50;
+  checkPageBreak(10);
+  doc.setFontSize(7);
+  doc.setTextColor(150, 150, 150);
+  doc.text('**** The duly filled form has to be submitted in the HR department (either hard copy or soft copy.)', margin, pageHeight - 10);
+  doc.text(`Page ${doc.internal.getCurrentPageInfo().pageNumber}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
   
   return doc.output('arraybuffer');
+};
+
+// Helper function to calculate age from DOB
+const calculateAgeFromDOB = (dob) => {
+  if (!dob) return '';
+  const birthDate = new Date(dob);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age > 0 ? age.toString() : '';
 };
 
 export const generateMedicalInsuranceForm = async (candidateData, employeeSignature) => {
@@ -1460,14 +1791,21 @@ export const generateSelfDeclarationForm = async (candidateData, employeeSignatu
 
 
 
-const viewPDF = (pdfBytes) => {
+const viewPDF = (pdfBytes, preOpenedWindow = null) => {
   const blob = new Blob([pdfBytes], { type: 'application/pdf' });
   const url = URL.createObjectURL(blob);
   
-
+  // If we have a pre-opened window (from synchronous open), use it
+  if (preOpenedWindow && !preOpenedWindow.closed) {
+    preOpenedWindow.location.href = url;
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    return;
+  }
+  
+  // Try to open new window
   const newWindow = window.open(url, '_blank');
   if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-
+    // Popup blocked, download instead
     console.log('Popup blocked, downloading instead');
     const link = document.createElement('a');
     link.href = url;
@@ -1495,11 +1833,13 @@ const downloadPDF = (pdfBytes, filename) => {
 
 
 export const viewFormPDF = async (formId, profileData, adminSignature) => {
+  // Open window SYNCHRONOUSLY first to avoid popup blockers
+  // Browsers block popups from async callbacks
+  const preOpenedWindow = window.open('about:blank', '_blank');
+  
   try {
     const candidateData = { profileData };
     
-
-
     const employeeSignature = 
       profileData.signature || 
       profileData.form11Signature ||
@@ -1518,6 +1858,11 @@ export const viewFormPDF = async (formId, profileData, adminSignature) => {
     console.log('Employee signature found:', !!employeeSignature);
     console.log('Admin signature found:', !!adminSignature);
     console.log('Form ID requested:', formId);
+    
+    // Show loading message in the pre-opened window
+    if (preOpenedWindow && !preOpenedWindow.closed) {
+      preOpenedWindow.document.write('<html><head><title>Loading PDF...</title></head><body style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:system-ui;color:#666;"><div style="text-align:center;"><div style="font-size:24px;margin-bottom:10px;">⏳</div><div>Generating PDF, please wait...</div></div></body></html>');
+    }
     
     let pdfBytes;
     switch(formId) {
@@ -1546,20 +1891,24 @@ export const viewFormPDF = async (formId, profileData, adminSignature) => {
         pdfBytes = await generateSelfDeclarationForm(candidateData, employeeSignature);
         break;
       default:
+        if (preOpenedWindow) preOpenedWindow.close();
         throw new Error('Unknown form type: ' + formId);
     }
     
     console.log('PDF bytes generated, size:', pdfBytes?.byteLength || pdfBytes?.length || 0);
-    viewPDF(pdfBytes);
+    viewPDF(pdfBytes, preOpenedWindow);
     console.log('viewPDF called successfully');
   } catch (error) {
     console.error('Error viewing form:', error);
+    if (preOpenedWindow && !preOpenedWindow.closed) {
+      preOpenedWindow.close();
+    }
     alert('Error generating PDF: ' + error.message);
   }
 };
 
 
-export const downloadFormPDF = async (formId, profileData, candidateName, adminSignature) => {
+export const downloadFormPDF = async (formId, profileData, candidateName, adminSignature, userEmail = null) => {
   try {
     const candidateData = { profileData };
     
@@ -1583,37 +1932,60 @@ export const downloadFormPDF = async (formId, profileData, candidateName, adminS
     
     let pdfBytes;
     let filename;
+    let formName;
     
     switch(formId) {
       case 'form_11':
         pdfBytes = await fillForm11(candidateData, employeeSignature, adminSignature);
         filename = safeName + '_Form_11.pdf';
+        formName = 'Form_11';
         break;
       case 'form_f':
         pdfBytes = await fillFormF(candidateData, employeeSignature, adminSignature);
         filename = safeName + '_Form_F.pdf';
+        formName = 'Form_F';
         break;
       case 'pf_nomination':
         pdfBytes = await fillPFNomination(candidateData, employeeSignature, adminSignature);
         filename = safeName + '_PF_Nomination.pdf';
+        formName = 'PF_Nomination';
         break;
       case 'joining':
         pdfBytes = await generateEmployeeJoiningForm(candidateData, employeeSignature);
         filename = safeName + '_Joining_Form.pdf';
+        formName = 'Employee_Joining_Form';
         break;
       case 'insurance':
         pdfBytes = await generateMedicalInsuranceForm(candidateData, employeeSignature);
         filename = safeName + '_Medical_Insurance.pdf';
+        formName = 'Medical_Insurance_Form';
         break;
       case 'self_declaration':
         pdfBytes = await generateSelfDeclarationForm(candidateData, employeeSignature);
         filename = safeName + '_Self_Declaration.pdf';
+        formName = 'Self_Declaration_Form';
         break;
       default:
         throw new Error('Unknown form type: ' + formId);
     }
     
+    // Download locally
     downloadPDF(pdfBytes, filename);
+    
+    // Also upload to Google Drive if email is provided
+    if (userEmail) {
+      try {
+        const result = await uploadPdfToDrive(userEmail, pdfBytes, formName, filename);
+        if (result.success) {
+          console.log(`✅ ${formName} uploaded to Google Drive`);
+        } else {
+          console.log(`⚠️ Drive upload skipped or failed: ${result.error || 'Not connected'}`);
+        }
+      } catch (driveError) {
+        console.log('⚠️ Drive upload error:', driveError.message);
+        // Don't throw - download still worked
+      }
+    }
   } catch (error) {
     console.error('Error downloading form:', error);
     alert('Error generating PDF: ' + error.message);
@@ -1658,4 +2030,110 @@ export const generateAllForms = async (candidateData, adminSignature) => {
     insuranceForm: forms[4],
     selfDeclaration: forms[5]
   };
+};
+
+// Merge all candidate forms into a single PDF
+export const generateMergedAllFormsPDF = async (profileData, adminSignature) => {
+  try {
+    const candidateData = { profileData };
+    
+    const employeeSignature = 
+      profileData.signature || 
+      profileData.form11Signature ||
+      profileData.formFSignature ||
+      profileData.pfNominationSignature ||
+      profileData.insuranceSignature ||
+      profileData.selfDeclarationSignature ||
+      profileData.form11Data?.employeeSignature ||
+      profileData.formFData?.employeeSignature ||
+      profileData.pfNominationData?.employeeSignature ||
+      profileData.joiningFormData?.employeeSignature ||
+      profileData.medicalInsuranceData?.employeeSignature ||
+      profileData.selfDeclarationData?.employeeSignature ||
+      null;
+    
+    console.log('Generating all forms for merging...');
+    
+    // Generate all individual PDFs in parallel
+    const [form11Bytes, formFBytes, pfNomBytes, joiningBytes, insuranceBytes, selfDeclBytes] = await Promise.all([
+      fillForm11(candidateData, employeeSignature, adminSignature),
+      fillFormF(candidateData, employeeSignature, adminSignature),
+      fillPFNomination(candidateData, employeeSignature, adminSignature),
+      generateEmployeeJoiningForm(candidateData, employeeSignature),
+      generateMedicalInsuranceForm(candidateData, employeeSignature),
+      generateSelfDeclarationForm(candidateData, employeeSignature)
+    ]);
+    
+    console.log('All forms generated, now merging...');
+    
+    // Create a new PDF document to merge all forms into
+    const mergedPdf = await PDFDocument.create();
+    
+    // Helper to add pages from a PDF
+    const addPagesFromPdf = async (pdfBytes) => {
+      try {
+        const pdf = await PDFDocument.load(pdfBytes);
+        const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+        pages.forEach(page => mergedPdf.addPage(page));
+      } catch (e) {
+        console.error('Error adding PDF pages:', e);
+      }
+    };
+    
+    // Add all PDFs in order: Joining Form, Form 11, Form F, PF Nomination, Medical Insurance, Self Declaration
+    await addPagesFromPdf(joiningBytes);    // Employee Joining Form first
+    await addPagesFromPdf(form11Bytes);     // PF Declaration Form 11
+    await addPagesFromPdf(formFBytes);      // Gratuity Form F
+    await addPagesFromPdf(pfNomBytes);      // PF Nomination Form
+    await addPagesFromPdf(insuranceBytes);  // Medical Insurance Form
+    await addPagesFromPdf(selfDeclBytes);   // Self Declaration Form
+    
+    console.log('PDF merge complete, total pages:', mergedPdf.getPageCount());
+    
+    return await mergedPdf.save();
+  } catch (error) {
+    console.error('Error generating merged PDF:', error);
+    throw error;
+  }
+};
+
+// View merged all forms PDF
+export const viewMergedAllFormsPDF = async (profileData, adminSignature) => {
+  // Open window synchronously first
+  const preOpenedWindow = window.open('about:blank', '_blank');
+  
+  try {
+    if (preOpenedWindow && !preOpenedWindow.closed) {
+      preOpenedWindow.document.write('<html><head><title>Loading All Forms...</title></head><body style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:system-ui;color:#666;"><div style="text-align:center;"><div style="font-size:24px;margin-bottom:10px;">⏳</div><div>Generating all forms, please wait...</div></div></body></html>');
+    }
+    
+    const pdfBytes = await generateMergedAllFormsPDF(profileData, adminSignature);
+    viewPDF(pdfBytes, preOpenedWindow);
+  } catch (error) {
+    console.error('Error viewing merged PDF:', error);
+    if (preOpenedWindow && !preOpenedWindow.closed) {
+      preOpenedWindow.close();
+    }
+    alert('Error generating PDF: ' + error.message);
+  }
+};
+
+// Download merged all forms PDF
+export const downloadMergedAllFormsPDF = async (profileData, candidateName, adminSignature, department = '') => {
+  try {
+    const pdfBytes = await generateMergedAllFormsPDF(profileData, adminSignature);
+    
+    // Create filename with candidate name and department
+    const safeName = (candidateName || 'Candidate').replace(/[^a-zA-Z0-9]/g, '_');
+    const safeDept = department ? '_' + department.replace(/[^a-zA-Z0-9]/g, '_') : '';
+    const filename = `${safeName}${safeDept}_All_Forms.pdf`;
+    
+    downloadPDF(pdfBytes, filename);
+    
+    return pdfBytes; // Return bytes for Google Drive upload
+  } catch (error) {
+    console.error('Error downloading merged PDF:', error);
+    alert('Error generating PDF: ' + error.message);
+    throw error;
+  }
 };

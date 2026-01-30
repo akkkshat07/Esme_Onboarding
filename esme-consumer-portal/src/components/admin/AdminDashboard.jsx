@@ -6,7 +6,7 @@ import {
 import { Button, Input } from '../shared/UI';
 import { useTheme } from '../../contexts/ThemeContext';
 import { downloadChecklistPDF, viewChecklistPDF } from '../../utils/generateChecklist';
-import { viewFormPDF, downloadFormPDF } from '../../utils/pdfGenerator';
+import { viewFormPDF, downloadFormPDF, viewMergedAllFormsPDF, downloadMergedAllFormsPDF, generateMergedAllFormsPDF } from '../../utils/pdfGenerator';
 import * as XLSX from 'xlsx';
 import EsmeLogo from '../../assets/Esme-Logo-01.png';
 import ThemeToggle from '../shared/ThemeToggle';
@@ -1491,8 +1491,8 @@ export default function AdminDashboard({ user, onLogout }) {
                     <FileText size={20} className="text-white" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-white">Generated Forms</h2>
-                    <p className="text-indigo-100 text-sm">{selectedCandidateForForms.name}</p>
+                    <h2 className="text-lg font-bold text-white">Candidate Forms</h2>
+                    <p className="text-indigo-100 text-sm">{selectedCandidateForForms.name} • {selectedCandidateForForms.department || 'No Department'}</p>
                   </div>
                 </div>
                 <button 
@@ -1505,63 +1505,154 @@ export default function AdminDashboard({ user, onLogout }) {
             </div>
             
             <div className="p-6 overflow-y-auto max-h-[60vh]">
-              <div className="space-y-3">
-                {[
-                  { id: 'joining', name: 'Employee Joining Form', icon: '📋', dataKey: 'joiningFormData' },
-                  { id: 'form_f', name: 'Gratuity Form F', icon: '📝', dataKey: 'formFData' },
-                  { id: 'form_11', name: 'PF Declaration Form 11', icon: '📄', dataKey: 'form11Data' },
-                  { id: 'pf_nomination', name: 'PF Nomination Form', icon: '👥', dataKey: 'pfNominationData' },
-                  { id: 'insurance', name: 'Medical Insurance Form', icon: '🏥', dataKey: 'insuranceData' },
-                  { id: 'self_declaration', name: 'Self Declaration Form', icon: '✍️', dataKey: 'selfDeclarationData' },
-                ].map((form) => {
-                  const profileData = selectedCandidateForForms.profileData || {};
-                  // Check if specific form data exists, OR if candidate has submitted (meaning they went through forms)
-                  const hasSpecificFormData = !!profileData[form.dataKey];
-                  const hasBasicData = selectedCandidateForForms.status === 'submitted' && profileData.fullName;
-                  const hasFormData = hasSpecificFormData || hasBasicData;
-                  
-                  return (
-                    <div 
-                      key={form.id}
-                      className={`flex items-center justify-between p-4 rounded-xl border transition-all ${isDark ? 'bg-slate-700/50 border-slate-600 hover:bg-slate-700' : 'bg-slate-50 border-slate-200 hover:bg-slate-100'}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">{form.icon}</span>
-                        <div>
-                          <p className={`font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{form.name}</p>
-                          <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                            {hasSpecificFormData ? 'Form completed' : hasBasicData ? 'Can generate from profile' : 'Pending submission'}
-                          </p>
+              {/* Main Action - All Forms Combined PDF */}
+              {(() => {
+                const profileData = {
+                  ...(selectedCandidateForForms.profileData || {}),
+                  email: selectedCandidateForForms.profileData?.email || selectedCandidateForForms.email,
+                  mobileNumber: selectedCandidateForForms.profileData?.mobileNumber || selectedCandidateForForms.mobile,
+                  phone: selectedCandidateForForms.mobile,
+                  fullName: selectedCandidateForForms.profileData?.fullName || selectedCandidateForForms.name,
+                };
+                const hasSubmitted = selectedCandidateForForms.status === 'submitted';
+                
+                // Function to download and upload to Drive
+                const handleDownloadAndUploadToDrive = async () => {
+                  try {
+                    const pdfBytes = await downloadMergedAllFormsPDF(profileData, selectedCandidateForForms.name, adminSignature, selectedCandidateForForms.department);
+                    
+                    // Upload to Google Drive
+                    const safeName = (selectedCandidateForForms.name || 'Candidate').replace(/[^a-zA-Z0-9\s]/g, '').trim();
+                    const safeDept = selectedCandidateForForms.department ? '_' + selectedCandidateForForms.department.replace(/[^a-zA-Z0-9\s]/g, '').trim() : '';
+                    const filename = `${safeName}${safeDept}_All_Forms.pdf`;
+                    
+                    // Convert to base64
+                    const base64 = btoa(String.fromCharCode.apply(null, new Uint8Array(pdfBytes)));
+                    
+                    const response = await fetch(`${API_URL}/upload-pdf-to-drive`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        pdfBase64: base64,
+                        fileName: filename,
+                        userEmail: selectedCandidateForForms.email
+                      })
+                    });
+                    
+                    if (response.ok) {
+                      const result = await response.json();
+                      alert(`✅ PDF downloaded and uploaded to Google Drive!\nFile: ${result.file?.name || filename}`);
+                    } else {
+                      console.log('Drive upload failed, but download succeeded');
+                    }
+                  } catch (error) {
+                    console.error('Error:', error);
+                    alert('PDF downloaded but Drive upload failed: ' + error.message);
+                  }
+                };
+                
+                return (
+                  <>
+                    {/* Combined All Forms Section */}
+                    <div className={`p-5 rounded-xl border-2 mb-6 ${isDark ? 'bg-gradient-to-r from-emerald-900/30 to-teal-900/30 border-emerald-600/50' : 'bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-300'}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className={`p-3 rounded-xl ${isDark ? 'bg-emerald-900/50' : 'bg-emerald-100'}`}>
+                            <FileText size={28} className={isDark ? 'text-emerald-400' : 'text-emerald-600'} />
+                          </div>
+                          <div>
+                            <h3 className={`text-lg font-bold ${isDark ? 'text-emerald-300' : 'text-emerald-800'}`}>📑 All Forms Combined</h3>
+                            <p className={`text-sm ${isDark ? 'text-emerald-400/70' : 'text-emerald-600'}`}>
+                              Single PDF with all 6 forms • Downloads & saves to Drive
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          {hasSubmitted ? (
+                            <>
+                              <button
+                                onClick={() => viewMergedAllFormsPDF(profileData, adminSignature)}
+                                className={`px-4 py-2.5 text-sm font-semibold rounded-xl flex items-center gap-2 transition-all shadow-lg hover:shadow-xl ${isDark ? 'bg-indigo-600 text-white hover:bg-indigo-500' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+                              >
+                                <Eye size={18} />
+                                View All
+                              </button>
+                              <button
+                                onClick={handleDownloadAndUploadToDrive}
+                                className={`px-4 py-2.5 text-sm font-semibold rounded-xl flex items-center gap-2 transition-all shadow-lg hover:shadow-xl ${isDark ? 'bg-emerald-600 text-white hover:bg-emerald-500' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
+                              >
+                                <Download size={18} />
+                                Download & Save to Drive
+                              </button>
+                            </>
+                          ) : (
+                            <span className={`text-sm italic ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                              Candidate has not submitted forms yet
+                            </span>
+                          )}
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        {hasFormData ? (
-                          <>
-                            <button
-                              onClick={() => viewFormPDF(form.id, profileData, adminSignature)}
-                              className={`px-3 py-1.5 text-xs font-medium rounded-lg flex items-center gap-1.5 transition-all ${isDark ? 'bg-indigo-900/30 text-indigo-400 hover:bg-indigo-900/50' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'}`}
-                            >
-                              <Eye size={14} />
-                              View
-                            </button>
-                            <button
-                              onClick={() => downloadFormPDF(form.id, profileData, selectedCandidateForForms.name, adminSignature)}
-                              className={`px-3 py-1.5 text-xs font-medium rounded-lg flex items-center gap-1.5 transition-all ${isDark ? 'bg-emerald-900/30 text-emerald-400 hover:bg-emerald-900/50' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}`}
-                            >
-                              <Download size={14} />
-                              PDF
-                            </button>
-                          </>
-                        ) : (
-                          <span className={`text-xs italic ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                            Not available
-                          </span>
-                        )}
-                      </div>
                     </div>
-                  );
-                })}
-              </div>
+                    
+                    {/* Individual Forms - Collapsed by default */}
+                    <details className={`rounded-xl border overflow-hidden ${isDark ? 'border-slate-600' : 'border-slate-200'}`}>
+                      <summary className={`px-4 py-3 cursor-pointer font-medium text-sm ${isDark ? 'bg-slate-700/50 text-slate-300 hover:bg-slate-700' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}>
+                        View Individual Forms (6 forms)
+                      </summary>
+                      <div className="p-4 space-y-2">
+                        {[
+                          { id: 'joining', name: 'Employee Joining Form', icon: '📋', dataKey: 'joiningFormData' },
+                          { id: 'form_11', name: 'PF Declaration Form 11', icon: '📄', dataKey: 'form11Data' },
+                          { id: 'form_f', name: 'Gratuity Form F', icon: '📝', dataKey: 'formFData' },
+                          { id: 'pf_nomination', name: 'PF Nomination Form', icon: '👥', dataKey: 'pfNominationData' },
+                          { id: 'insurance', name: 'Medical Insurance Form', icon: '🏥', dataKey: 'insuranceData' },
+                          { id: 'self_declaration', name: 'Self Declaration Form', icon: '✍️', dataKey: 'selfDeclarationData' },
+                        ].map((form) => {
+                          const hasSpecificFormData = !!profileData[form.dataKey];
+                          const hasBasicData = hasSubmitted && profileData.fullName;
+                          const hasFormData = hasSpecificFormData || hasBasicData;
+                          
+                          return (
+                            <div 
+                              key={form.id}
+                              className={`flex items-center justify-between p-3 rounded-lg border transition-all ${isDark ? 'bg-slate-700/30 border-slate-600/50 hover:bg-slate-700/50' : 'bg-white border-slate-100 hover:bg-slate-50'}`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="text-lg">{form.icon}</span>
+                                <p className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{form.name}</p>
+                              </div>
+                              <div className="flex gap-1.5">
+                                {hasFormData ? (
+                                  <>
+                                    <button
+                                      onClick={() => viewFormPDF(form.id, profileData, adminSignature)}
+                                      className={`px-2 py-1 text-xs font-medium rounded-md flex items-center gap-1 transition-all ${isDark ? 'bg-indigo-900/30 text-indigo-400 hover:bg-indigo-900/50' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'}`}
+                                    >
+                                      <Eye size={12} />
+                                      View
+                                    </button>
+                                    <button
+                                      onClick={() => downloadFormPDF(form.id, profileData, selectedCandidateForForms.name, adminSignature, selectedCandidateForForms.email)}
+                                      className={`px-2 py-1 text-xs font-medium rounded-md flex items-center gap-1 transition-all ${isDark ? 'bg-emerald-900/30 text-emerald-400 hover:bg-emerald-900/50' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}`}
+                                    >
+                                      <Download size={12} />
+                                      PDF
+                                    </button>
+                                  </>
+                                ) : (
+                                  <span className={`text-xs italic ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                                    Pending
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </details>
+                  </>
+                );
+              })()}
               
               {/* Admin Signature Status */}
               <div className={`mt-6 p-4 rounded-xl border ${isDark ? 'bg-slate-700/30 border-slate-600' : 'bg-amber-50 border-amber-200'}`}>

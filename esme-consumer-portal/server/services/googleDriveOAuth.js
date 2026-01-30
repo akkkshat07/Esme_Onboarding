@@ -208,6 +208,95 @@ export const deleteFileFromDrive = async (fileId) => {
   }
 };
 
+// Upload PDF bytes/buffer directly to Drive
+export const uploadPdfBufferToDrive = async (folderId, pdfBuffer, fileName) => {
+  try {
+    const drive = await getDriveClient();
+    const { Readable } = await import('stream');
+    
+    // Convert buffer to readable stream
+    const bufferStream = new Readable();
+    bufferStream.push(pdfBuffer);
+    bufferStream.push(null);
+
+    const file = await drive.files.create({
+      resource: {
+        name: fileName,
+        parents: [folderId]
+      },
+      media: {
+        mimeType: 'application/pdf',
+        body: bufferStream
+      },
+      fields: 'id, name, webViewLink, webContentLink'
+    });
+
+    console.log(`✅ Uploaded PDF: ${fileName} (${file.data.id})`);
+
+    // Set public read permissions
+    try {
+      await drive.permissions.create({
+        fileId: file.data.id,
+        requestBody: {
+          role: 'reader',
+          type: 'anyone'
+        }
+      });
+    } catch (permError) {
+      console.log('⚠️ Could not set public permissions');
+    }
+
+    return {
+      fileId: file.data.id,
+      fileName: file.data.name,
+      viewLink: file.data.webViewLink,
+      downloadLink: file.data.webContentLink
+    };
+  } catch (error) {
+    console.error('❌ Error uploading PDF buffer:', error.message);
+    throw error;
+  }
+};
+
+// Find and delete file by name in folder
+export const deleteFileByName = async (folderId, fileName) => {
+  try {
+    const drive = await getDriveClient();
+    
+    // Find file by name
+    const response = await drive.files.list({
+      q: `'${folderId}' in parents and name='${fileName}' and trashed=false`,
+      fields: 'files(id, name)'
+    });
+
+    if (response.data.files?.length > 0) {
+      for (const file of response.data.files) {
+        await drive.files.delete({ fileId: file.id });
+        console.log(`🗑️ Deleted file: ${file.name} (${file.id})`);
+      }
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('❌ Error deleting file by name:', error.message);
+    return false;
+  }
+};
+
+// Upload or replace file (delete old, upload new)
+export const uploadOrReplacePdf = async (folderId, pdfBuffer, fileName) => {
+  try {
+    // First try to delete any existing file with same name
+    await deleteFileByName(folderId, fileName);
+    
+    // Then upload the new file
+    return await uploadPdfBufferToDrive(folderId, pdfBuffer, fileName);
+  } catch (error) {
+    console.error('❌ Error in uploadOrReplacePdf:', error.message);
+    throw error;
+  }
+};
+
 
 export const getDriveStatus = async () => {
   try {
@@ -234,6 +323,9 @@ export default {
   handleAuthCallback,
   createCandidateFolder,
   uploadFileToDrive,
+  uploadPdfBufferToDrive,
+  uploadOrReplacePdf,
+  deleteFileByName,
   listFolderFiles,
   deleteFileFromDrive,
   getDriveStatus

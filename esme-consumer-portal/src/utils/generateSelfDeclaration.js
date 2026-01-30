@@ -1,3 +1,5 @@
+import { uploadPdfToDrive } from './driveUpload';
+
 export const generateSelfDeclarationFormPDF = async (candidate) => {
   const jsPDF = (await import('jspdf')).default;
   const doc = new jsPDF('p', 'mm', 'a4');
@@ -134,4 +136,19 @@ export const downloadSelfDeclarationFormPDF = async (candidate) => {
   const doc = await generateSelfDeclarationFormPDF(candidate);
   const fileName = `${candidate.name}_Self_Declaration_${new Date().toISOString().split('T')[0]}.pdf`;
   doc.save(fileName);
+  
+  // Upload to Google Drive if email available
+  if (candidate.email) {
+    try {
+      const pdfBlob = doc.output('blob');
+      const arrayBuffer = await pdfBlob.arrayBuffer();
+      const pdfBytes = new Uint8Array(arrayBuffer);
+      const result = await uploadPdfToDrive(candidate.email, pdfBytes, 'Self_Declaration_Form', fileName);
+      if (result.success) {
+        console.log('✅ Self Declaration Form uploaded to Google Drive');
+      }
+    } catch (err) {
+      console.log('⚠️ Drive upload skipped:', err.message);
+    }
+  }
 };
