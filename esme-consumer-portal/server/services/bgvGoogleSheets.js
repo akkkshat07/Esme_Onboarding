@@ -39,9 +39,10 @@ const findRowByEmail = async (sheets, sheetId, sheetName, email) => {
       return null;
     }
     
+    // Email is in column K (11th column) in the BGV sheet
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: `'${sheetName}'!L:L` 
+      range: `'${sheetName}'!K:K` 
     });
 
     const emails = response.data.values?.flat() || [];
@@ -121,48 +122,33 @@ const appendToSheet = async (sheetKey, candidateData) => {
     console.log(`📱 Mobile number sources - profileData.mobileNumber: ${profileData.mobileNumber}, joiningData.mobileNumber: ${joiningData.mobileNumber}, candidateData.mobile: ${candidateData.mobile}`);
     console.log(`📱 Final mobile number: ${mobileNumber}`);
 
+    // BGV Sheet columns - ONLY these 17 fields from Personal Information page
+    // Column headers in order:
+    // A: Staff ID/Employee ID | B: 12-digit Aadhaar | C: 10-digit Mobile | D: Profession/Title
+    // E: Current City | F: Entity | G: Full Name | H: Gender (M/F/T) | I: Date of Birth
+    // J: Age | K: Email | L: S/O or D/O or C/O (Father's name) | M: Permanent/Aadhaar Address
+    // N: Current/Local Address | O: Pincode | P: Date of Joining | Q: Alternate Mobile
     const rowData = [
-      getValue('staffIdEmployeeId', 'employeeCode'),           
-      getValue('aadhaarNumber'),              
-      mobileNumber,                                   
-      getValue('profession', 'designation'),                  
-      getValue('currentCity'),                
-      getValue('entity', 'department'),                       
-      getValue('fullName') || candidateData.name || '', 
-      getValue('gender'),                      
-      getValue('dateOfBirth'),                 
-      getValue('age'),                         
-      candidateEmail,                                 
-      getValue('fatherName'),                  
-      getValue('permanentAddress'),            
-      getValue('currentAddress'),              
-      getValue('pincode', 'currentPincode', 'permanentPincode'),                      
-      getValue('dateOfJoining'),               
-   
-      getValue('alternateMobileNumber', 'alternateMobile'),        
-      getValue('bloodGroup'),                 
-      getValue('maritalStatus'),               
-      getValue('bankName'),                    
-      getValue('accountNumber', 'bankAccountNumber'),                
-      getValue('ifscCode'),                    
-      getValue('accountHolderName'),            
-      getValue('panNumber'),                   
-      getValue('uanNumber'),                   
-      getValue('passportNumber'),               
-
-      getValue('emergencyContactName'),        
-      getValue('emergencyContactRelation'),     
-      getValue('emergencyContactNumber', 'emergencyContactMobile'),      
-
-      getValue('spouseName'),                  
-      getValue('nomineeName') || formFData.nominees?.[0]?.name || '',                
-      getValue('nomineeRelationship') || formFData.nominees?.[0]?.relationship || '',          
-      getValue('nomineeDOB'),                  
-      getValue('department'),                
-      candidateData.status || '',                    
+      getValue('staffIdEmployeeId', 'employeeCode', 'employeeId'),  // A: Staff ID or Employee ID
+      getValue('aadhaarNumber'),                                     // B: 12-digit Aadhaar number
+      mobileNumber,                                                  // C: 10-digit Mobile Number
+      getValue('profession', 'designation'),                         // D: Profession / Title
+      getValue('currentCity'),                                       // E: Current City
+      getValue('entity', 'department', 'division'),                  // F: Entity
+      getValue('fullName') || candidateData.name || '',              // G: Full name (as per Aadhaar)
+      getValue('gender'),                                            // H: Gender (M/F/T)
+      getValue('dateOfBirth', 'dob'),                                // I: Date of Birth (dd-mm-yyyy)
+      getValue('age'),                                               // J: Age (if DoB not available)
+      candidateEmail,                                                // K: Email
+      getValue('fatherName', 'fatherHusbandName'),                   // L: S/O, D/O, C/O (Father's name)
+      getValue('permanentAddress', 'aadhaarAddress'),                // M: Address as per Aadhaar/Permanent
+      getValue('currentAddress', 'localAddress'),                    // N: Current/Local Address
+      getValue('currentPincode', 'pincode', 'permanentPincode'),     // O: Pincode (for current address)
+      getValue('dateOfJoining', 'doj'),                              // P: Date of Joining (dd-mm-yyyy)
+      getValue('alternateMobileNumber', 'alternateMobile'),          // Q: Alternate Mobile Number
     ];
 
-    console.log(`📝 Data to sync (${rowData.length} columns):`, JSON.stringify(rowData.slice(0, 10)) + '...');
+    console.log(`📝 BGV Data to sync (${rowData.length} columns):`, JSON.stringify(rowData));
 
 
     const existingRowIndex = await findRowByEmail(sheets, sheetId, sheetName, candidateEmail);
@@ -173,7 +159,7 @@ const appendToSheet = async (sheetKey, candidateData) => {
       console.log(`🔄 Candidate found at row ${existingRowIndex}, updating...`);
       response = await sheets.spreadsheets.values.update({
         spreadsheetId: sheetId,
-        range: `'${sheetName}'!B${existingRowIndex}:AJ${existingRowIndex}`,
+        range: `'${sheetName}'!A${existingRowIndex}:Q${existingRowIndex}`,
         valueInputOption: 'USER_ENTERED',
         resource: { values: [rowData] }
       });
@@ -183,7 +169,7 @@ const appendToSheet = async (sheetKey, candidateData) => {
       console.log(`➕ New candidate, appending to sheet...`);
       response = await sheets.spreadsheets.values.append({
         spreadsheetId: sheetId,
-        range: `'${sheetName}'!B:AJ`,
+        range: `'${sheetName}'!A:Q`,
         valueInputOption: 'USER_ENTERED',
         insertDataOption: 'INSERT_ROWS',
         resource: { values: [rowData] }
