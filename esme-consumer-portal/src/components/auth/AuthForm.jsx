@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ShieldCheck, AlertCircle, Moon, Sun } from 'lucide-react';
 import { Input, Button } from '../shared/UI';
 import { useTheme } from '../../contexts/ThemeContext';
+import VantaBackground from '../ui/VantaBackground';
 import esmeLogo from '../../assets/Esme-Logo-01.png';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
@@ -136,18 +137,18 @@ export default function AuthForm({ onAuthSuccess }) {
   return (
     <div className={`min-h-screen flex font-sans transition-colors duration-300 ${isDark ? 'bg-slate-900' : ''}`}>
       <div className={`hidden lg:flex lg:w-1/2 ${isDark ? 'bg-slate-950' : 'bg-[#0f172a]'} flex-col justify-between p-12 ${isDark ? 'text-slate-100' : 'text-white'} relative overflow-hidden`}>
-        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-          <div className="absolute right-0 top-0 w-96 h-96 bg-teal-500 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
-          <div className="absolute left-0 bottom-0 w-96 h-96 bg-indigo-500 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2"></div>
+        {/* Vanta Birds Background */}
+        <div className="absolute inset-0 z-0">
+          <VantaBackground />
         </div>
-        <div>
+        <div className="relative z-10">
           <img src={esmeLogo} alt="Esme Logo" className="h-16" />
         </div>
-        <div className="max-w-lg mb-20 z-10">
+        <div className="max-w-lg mb-20 z-10 relative">
           <h2 className={`text-3xl font-light mb-6 leading-tight ${isDark ? 'text-slate-100' : 'text-white'}`}>Seamless onboarding for the modern workforce.</h2>
           <p className={`text-lg ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Securely manage documentation, compliance, and employee data in one unified consumer portal.</p>
         </div>
-        <div className={`text-xs uppercase tracking-widest z-10 ${isDark ? 'text-slate-600' : 'text-slate-500'}`}>© 2026 Esme Consumer</div>
+        <div className={`text-xs uppercase tracking-widest z-10 relative ${isDark ? 'text-slate-600' : 'text-slate-500'}`}>© 2026 Esme Consumer</div>
       </div>
 
       <div className={`w-full lg:w-1/2 ${isDark ? 'bg-slate-800' : 'bg-slate-50'} flex items-center justify-center p-8 relative transition-colors duration-300`}>

@@ -81,26 +81,42 @@ export const generateChecklistPDF = async (candidate) => {
 
 
   const documents = [
-    { name: 'Employee Joining Form', required: true },
-    { name: 'PF Form 11', required: true },
-    { name: 'Gratuity Form F', required: true },
-    { name: 'Medical Insurance Form', required: true },
-    { name: 'PF Nomination Form', required: true },
-    { name: 'Self Declaration Form', required: true },
-    { name: '10th Standard Certificate', required: true },
-    { name: '12th Standard Certificate', required: true },
-    { name: 'Undergraduate Degree', required: true },
-    { name: 'Postgraduate Degree', required: false },
-    { name: 'Experience Letters', required: false },
-    { name: 'Aadhaar Card Copy', required: true },
-    { name: 'PAN Card Copy', required: true },
-    { name: 'Passport Size Photos (2)', required: true },
-    { name: 'Bank Passbook / Cancelled Cheque', required: true },
-    { name: 'Previous Employment Relieving Letter', required: false }
+    { name: 'Employee Joining Form', required: true, formKey: 'joiningFormData' },
+    { name: 'PF Form 11', required: true, formKey: 'form11Data' },
+    { name: 'Gratuity Form F', required: true, formKey: 'formFData' },
+    { name: 'Medical Insurance Form', required: true, formKey: 'medicalInsuranceData' },
+    { name: 'PF Nomination Form', required: true, formKey: 'pfNominationData' },
+    { name: 'Self Declaration Form', required: true, formKey: 'selfDeclarationData' },
+    { name: '10th Standard Certificate', required: true, docType: '10th' },
+    { name: '12th Standard Certificate', required: true, docType: '12th' },
+    { name: 'Undergraduate Degree', required: true, docType: 'degree' },
+    { name: 'Postgraduate Degree', required: false, docType: 'postgrad' },
+    { name: 'Experience Letters', required: false, docType: 'experience' },
+    { name: 'Aadhaar Card Copy', required: true, docType: 'aadhaar' },
+    { name: 'PAN Card Copy', required: true, docType: 'pan' },
+    { name: 'Passport Size Photos (2)', required: true, docType: 'photo' },
+    { name: 'Bank Passbook / Cancelled Cheque', required: true, docType: 'bank' },
+    { name: 'Previous Employment Relieving Letter', required: false, docType: 'relieving' }
   ];
 
 
-  const uploadedDocs = candidate.documents?.map(d => d.type.toLowerCase()) || [];
+  const uploadedDocs = candidate.documents?.map(d => d.type?.toLowerCase()) || [];
+  const profileData = candidate.profileData || {};
+  
+  // Check if form data exists (form was filled/generated)
+  const isFormGenerated = (formKey) => {
+    if (!formKey) return false;
+    const formData = profileData[formKey];
+    return formData && Object.keys(formData).length > 0;
+  };
+  
+  // Check if document was uploaded
+  const isDocUploaded = (docType) => {
+    if (!docType) return false;
+    return uploadedDocs.some(d => 
+      d && (d.includes(docType) || docType.includes(d.substring(0, 5)))
+    );
+  };
   
 
   doc.setFillColor(30, 70, 120);
@@ -145,21 +161,20 @@ export const generateChecklistPDF = async (candidate) => {
     doc.text(docItem.name, margin + 15, yPosition);
     doc.text(docItem.required ? 'Yes' : 'No', margin + 105, yPosition);
     
-
-    const docKey = docItem.name.toLowerCase().replace(/\s+/g, '_');
-    const isUploaded = uploadedDocs.some(d => 
-      d.includes(docKey.substring(0, 8)) || docKey.includes(d.substring(0, 8))
-    );
+    // Check if form is generated or document is uploaded
+    const isCompleted = docItem.formKey 
+      ? isFormGenerated(docItem.formKey) 
+      : isDocUploaded(docItem.docType);
     
-
+    // Submitted checkbox
     doc.rect(margin + 130, yPosition - 3, 4, 4);
-    if (isUploaded) {
+    if (isCompleted) {
       doc.setFontSize(10);
       doc.text('✓', margin + 130.5, yPosition);
       doc.setFontSize(8);
     }
     
-
+    // Verified checkbox (empty for HR to fill)
     doc.rect(margin + 157, yPosition - 3, 4, 4);
 
     yPosition += 8;
