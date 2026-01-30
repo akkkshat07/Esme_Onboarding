@@ -291,11 +291,12 @@ export default function EmployeeJoiningForm({ formData, onFormDataChange, onNext
   };
 
   const validateForm = () => {
+    // Core required fields - dateOfJoining is optional (can be set by HR later)
     const requiredFields = [
       'fullName', 'fatherName', 'dateOfBirth', 'gender', 'maritalStatus',
       'mobileNumber', 'currentAddress', 'currentCity', 'currentState', 'currentPincode',
       'permanentAddress', 'permanentCity', 'permanentState', 'permanentPincode',
-      'dateOfJoining', 'designation',
+      'designation',
       'panNumber', 'bankName', 'bankAccountNumber', 'ifscCode',
       'emergencyContactName', 'emergencyContactMobile'
     ];

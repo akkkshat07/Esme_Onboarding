@@ -105,7 +105,39 @@ export default function SignatureCapture({
   const saveSignature = () => {
     const canvas = canvasRef.current;
     if (canvas) {
-      const dataUrl = canvas.toDataURL('image/png');
+      // Create a temporary canvas with white background for PDF output
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = canvas.width;
+      tempCanvas.height = canvas.height;
+      const tempCtx = tempCanvas.getContext('2d');
+      
+      // Fill with white background (for PDF printing)
+      tempCtx.fillStyle = '#ffffff';
+      tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+      
+      // If in dark mode, we need to invert the signature (white strokes -> black strokes)
+      if (isDark) {
+        // Get the original canvas image data
+        const originalCtx = canvas.getContext('2d');
+        const imageData = originalCtx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        
+        // Invert colors: dark bg with white strokes -> white bg with black strokes
+        for (let i = 0; i < data.length; i += 4) {
+          // Invert RGB values
+          data[i] = 255 - data[i];       // R
+          data[i + 1] = 255 - data[i + 1]; // G
+          data[i + 2] = 255 - data[i + 2]; // B
+          // Keep alpha unchanged
+        }
+        
+        tempCtx.putImageData(imageData, 0, 0);
+      } else {
+        // Light mode - just copy the canvas
+        tempCtx.drawImage(canvas, 0, 0);
+      }
+      
+      const dataUrl = tempCanvas.toDataURL('image/png');
       onChange && onChange(dataUrl);
     }
   };
