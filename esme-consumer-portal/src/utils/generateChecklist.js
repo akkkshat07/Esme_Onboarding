@@ -84,7 +84,7 @@ export const generateChecklistPDF = async (candidate) => {
     { name: 'Employee Joining Form', required: true, formKey: 'joiningFormData' },
     { name: 'PF Form 11', required: true, formKey: 'form11Data' },
     { name: 'Gratuity Form F', required: true, formKey: 'formFData' },
-    { name: 'Medical Insurance Form', required: true, formKey: 'medicalInsuranceData' },
+    { name: 'Medical Insurance Form', required: true, formKey: 'insuranceData', altFormKey: 'medicalInsuranceData' },
     { name: 'PF Nomination Form', required: true, formKey: 'pfNominationData' },
     { name: 'Self Declaration Form', required: true, formKey: 'selfDeclarationData' },
     { name: '10th Standard Certificate', required: true, docType: '10th' },
@@ -104,10 +104,11 @@ export const generateChecklistPDF = async (candidate) => {
   const profileData = candidate.profileData || {};
   
   // Check if form data exists (form was filled/generated)
-  const isFormGenerated = (formKey) => {
+  const isFormGenerated = (formKey, altFormKey) => {
     if (!formKey) return false;
     const formData = profileData[formKey];
-    return formData && Object.keys(formData).length > 0;
+    const altFormData = altFormKey ? profileData[altFormKey] : null;
+    return (formData && Object.keys(formData).length > 0) || (altFormData && Object.keys(altFormData).length > 0);
   };
   
   // Check if document was uploaded
@@ -163,7 +164,7 @@ export const generateChecklistPDF = async (candidate) => {
     
     // Check if form is generated or document is uploaded
     const isCompleted = docItem.formKey 
-      ? isFormGenerated(docItem.formKey) 
+      ? isFormGenerated(docItem.formKey, docItem.altFormKey) 
       : isDocUploaded(docItem.docType);
     
     // Submitted checkbox
@@ -255,6 +256,13 @@ export const generateChecklistPDF = async (candidate) => {
   doc.text('This is a system-generated document. | Esme Consumer (P) Ltd.', pageWidth / 2, footerY, { align: 'center' });
 
   return doc;
+};
+
+export const viewChecklistPDF = async (candidate) => {
+  const doc = await generateChecklistPDF(candidate);
+  const pdfBlob = doc.output('blob');
+  const blobUrl = URL.createObjectURL(pdfBlob);
+  window.open(blobUrl, '_blank');
 };
 
 export const downloadChecklistPDF = async (candidate) => {

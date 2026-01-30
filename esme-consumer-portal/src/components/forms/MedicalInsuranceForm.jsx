@@ -201,14 +201,16 @@ export default function MedicalInsuranceForm({ formData, onFormDataChange, onNex
   return (
     <div className="space-y-6 animate-fade-in-up">
       {}
-      <div className={`p-4 rounded-xl ${isDark ? 'bg-rose-900/20 border border-rose-800' : 'bg-rose-50 border border-rose-200'}`}>
+      <div className={`p-4 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
         <div className="flex items-start gap-3">
-          <Info className={`mt-0.5 ${isDark ? 'text-rose-400' : 'text-rose-600'}`} size={20} />
+          <div className={`p-2 rounded-lg ${isDark ? 'bg-rose-900/50' : 'bg-rose-100'}`}>
+            <Info className={isDark ? 'text-rose-400' : 'text-rose-600'} size={18} />
+          </div>
           <div>
-            <h3 className={`font-semibold ${isDark ? 'text-rose-300' : 'text-rose-800'}`}>
+            <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
               Medical Insurance Enrollment Form
             </h3>
-            <p className={`text-sm mt-1 ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>
+            <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
               Group Health Insurance coverage provided by ESME Consumer Pvt Ltd.
               Please provide accurate details for yourself and family members you wish to include in the coverage.
             </p>

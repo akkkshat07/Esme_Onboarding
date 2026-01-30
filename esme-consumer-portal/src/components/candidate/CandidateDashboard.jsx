@@ -326,7 +326,12 @@ export default function CandidateDashboard({ user, onLogout }) {
           <div className="bg-gradient-to-br from-teal-500 to-teal-700 rounded-2xl p-6 text-white shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/30 transition-all duration-300 hover:-translate-y-1">
              <h3 className="font-bold text-lg mb-1">Need Help?</h3>
              <p className="text-teal-100 text-sm mb-4">Contact HR if you face issues with documents.</p>
-             <button className="text-xs font-bold bg-white/20 hover:bg-white/30 px-3 py-2 rounded-lg transition-all duration-200 w-full text-center hover:scale-[1.02] active:scale-[0.98]">Contact Support</button>
+             <a 
+               href="mailto:hrconnect@esmeconsumer.in" 
+               className="text-xs font-bold bg-white/20 hover:bg-white/30 px-3 py-2 rounded-lg transition-all duration-200 w-full text-center hover:scale-[1.02] active:scale-[0.98] block"
+             >
+               Contact Support
+             </a>
           </div>
 
           <div className="pt-2">
@@ -861,9 +866,12 @@ function StatusDashboard({ user, candidateData, status, onLogout, onViewProfile,
         <div className="bg-gradient-to-br from-teal-500 to-teal-700 rounded-xl p-6 text-white hover:shadow-xl hover:shadow-teal-500/30 hover:-translate-y-1 transition-all duration-300">
           <h3 className="font-bold text-lg mb-2">Need Help?</h3>
           <p className="text-teal-100 text-sm mb-4">Contact HR if you have questions about your application.</p>
-          <button className="text-sm font-bold bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95">
+          <a 
+            href="mailto:hrconnect@esmeconsumer.in" 
+            className="text-sm font-bold bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 inline-block"
+          >
             Contact Support
-          </button>
+          </a>
         </div>
       </div>
     </div>

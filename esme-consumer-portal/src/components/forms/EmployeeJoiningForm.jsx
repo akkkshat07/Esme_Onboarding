@@ -188,14 +188,16 @@ export default function EmployeeJoiningForm({ formData, onFormDataChange, onNext
   return (
     <div className="space-y-6 animate-fade-in-up">
       {}
-      <div className={`p-4 rounded-xl ${isDark ? 'bg-teal-900/20 border border-teal-800' : 'bg-teal-50 border border-teal-200'}`}>
+      <div className={`p-4 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
         <div className="flex items-start gap-3">
-          <Info className={`mt-0.5 ${isDark ? 'text-teal-400' : 'text-teal-600'}`} size={20} />
+          <div className={`p-2 rounded-lg ${isDark ? 'bg-teal-900/50' : 'bg-teal-100'}`}>
+            <Info className={isDark ? 'text-teal-400' : 'text-teal-600'} size={18} />
+          </div>
           <div>
-            <h3 className={`font-semibold ${isDark ? 'text-teal-300' : 'text-teal-800'}`}>
+            <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
               Employee Joining Form - ESME Consumer Pvt Ltd
             </h3>
-            <p className={`text-sm mt-1 ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>
+            <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
               Please fill in all the required details accurately. This information will be used for official records 
               and HR purposes. Fields marked with * are mandatory.
             </p>

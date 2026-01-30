@@ -177,14 +177,16 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
   return (
     <div className="space-y-6 animate-fade-in-up">
       {}
-      <div className={`p-4 rounded-xl ${isDark ? 'bg-purple-900/20 border border-purple-800' : 'bg-purple-50 border border-purple-200'}`}>
+      <div className={`p-4 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
         <div className="flex items-start gap-3">
-          <Info className={`mt-0.5 ${isDark ? 'text-purple-400' : 'text-purple-600'}`} size={20} />
+          <div className={`p-2 rounded-lg ${isDark ? 'bg-purple-900/50' : 'bg-purple-100'}`}>
+            <Info className={isDark ? 'text-purple-400' : 'text-purple-600'} size={18} />
+          </div>
           <div>
-            <h3 className={`font-semibold ${isDark ? 'text-purple-300' : 'text-purple-800'}`}>
+            <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
               Form 11 - EPF/EPS Declaration Form
             </h3>
-            <p className={`text-sm mt-1 ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>
+            <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
               Declaration by a person taking up employment under EPF Scheme, 1952 and EPS, 1995.
               This form is mandatory for PF registration with your new employer.
             </p>

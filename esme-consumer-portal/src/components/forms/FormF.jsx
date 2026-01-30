@@ -145,14 +145,16 @@ export default function FormF({ formData, onFormDataChange, onNext, onBack }) {
   return (
     <div className="space-y-6 animate-fade-in-up">
       {}
-      <div className={`p-4 rounded-xl ${isDark ? 'bg-indigo-900/20 border border-indigo-800' : 'bg-indigo-50 border border-indigo-200'}`}>
+      <div className={`p-4 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
         <div className="flex items-start gap-3">
-          <Info className={`mt-0.5 ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`} size={20} />
+          <div className={`p-2 rounded-lg ${isDark ? 'bg-indigo-900/50' : 'bg-indigo-100'}`}>
+            <Info className={isDark ? 'text-indigo-400' : 'text-indigo-600'} size={18} />
+          </div>
           <div>
-            <h3 className={`font-semibold ${isDark ? 'text-indigo-300' : 'text-indigo-800'}`}>
+            <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
               Form F - Gratuity Nomination Form
             </h3>
-            <p className={`text-sm mt-1 ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>
+            <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
               Nomination under Rule 6(1) of The Payment of Gratuity (Central) Rules, 1972.
               This form allows you to nominate beneficiaries who will receive your gratuity in case of your death.
             </p>

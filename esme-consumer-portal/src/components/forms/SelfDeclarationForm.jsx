@@ -186,14 +186,16 @@ export default function SelfDeclarationForm({ formData, onFormDataChange, onNext
   return (
     <div className="space-y-6 animate-fade-in-up">
       {}
-      <div className={`p-4 rounded-xl ${isDark ? 'bg-amber-900/20 border border-amber-800' : 'bg-amber-50 border border-amber-200'}`}>
+      <div className={`p-4 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
         <div className="flex items-start gap-3">
-          <Info className={`mt-0.5 ${isDark ? 'text-amber-400' : 'text-amber-600'}`} size={20} />
+          <div className={`p-2 rounded-lg ${isDark ? 'bg-amber-900/50' : 'bg-amber-100'}`}>
+            <Info className={isDark ? 'text-amber-400' : 'text-amber-600'} size={18} />
+          </div>
           <div>
-            <h3 className={`font-semibold ${isDark ? 'text-amber-300' : 'text-amber-800'}`}>
+            <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
               Self Declaration Form - ESME Consumer Pvt Ltd
             </h3>
-            <p className={`text-sm mt-1 ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+            <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
               This declaration form is mandatory for all new employees. Please answer all questions honestly.
               Any false declaration may result in termination of employment.
             </p>

@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { Button, Input } from '../shared/UI';
 import { useTheme } from '../../contexts/ThemeContext';
-import { downloadChecklistPDF } from '../../utils/generateChecklist';
+import { downloadChecklistPDF, viewChecklistPDF } from '../../utils/generateChecklist';
 import { viewFormPDF, downloadFormPDF } from '../../utils/pdfGenerator';
 import * as XLSX from 'xlsx';
 import EsmeLogo from '../../assets/Esme-Logo-01.png';
@@ -594,22 +594,26 @@ export default function AdminDashboard({ user, onLogout }) {
 
         {!driveStatus.checking && (
           <div className={`mb-6 p-4 rounded-xl border transition-all duration-300 hover:shadow-lg ${
-            driveStatus.connected 
-              ? 'bg-green-50 border-green-200' 
-              : 'bg-amber-50 border-amber-200'
+            isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
           }`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {driveStatus.connected ? (
-                  <Cloud className="text-green-600" size={24} />
-                ) : (
-                  <CloudOff className="text-amber-600" size={24} />
-                )}
+                <div className={`p-2 rounded-lg ${
+                  driveStatus.connected 
+                    ? isDark ? 'bg-emerald-900/50' : 'bg-emerald-100'
+                    : isDark ? 'bg-amber-900/50' : 'bg-amber-100'
+                }`}>
+                  {driveStatus.connected ? (
+                    <Cloud className={isDark ? 'text-emerald-400' : 'text-emerald-600'} size={20} />
+                  ) : (
+                    <CloudOff className={isDark ? 'text-amber-400' : 'text-amber-600'} size={20} />
+                  )}
+                </div>
                 <div>
-                  <p className={`font-semibold ${driveStatus.connected ? 'text-green-800' : 'text-amber-800'}`}>
+                  <p className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
                     {driveStatus.connected ? 'Google Drive Connected' : 'Google Drive Not Connected'}
                   </p>
-                  <p className={`text-sm ${driveStatus.connected ? 'text-green-600' : 'text-amber-600'}`}>
+                  <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                     {driveStatus.connected 
                       ? `Connected as ${driveStatus.user || driveStatus.displayName}` 
                       : 'Connect to enable file uploads to Google Drive'}
@@ -749,8 +753,8 @@ export default function AdminDashboard({ user, onLogout }) {
       </main>
 
       {selectedCandidate && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-4xl max-h-[90vh] rounded-3xl overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 border border-slate-200 dark:border-slate-700">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-4xl max-h-[90vh] rounded-3xl overflow-hidden flex flex-col shadow-2xl animate-scale-in border border-slate-200 dark:border-slate-700">
              <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
                 <div>
                    <div className="flex items-center gap-2">
@@ -846,6 +850,12 @@ export default function AdminDashboard({ user, onLogout }) {
                          className="flex items-center gap-1 text-xs font-bold text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 bg-purple-50 dark:bg-purple-900/20 px-3 py-1.5 rounded-lg border border-transparent hover:border-purple-200 dark:hover:border-purple-800 transition-all"
                        >
                          <FileText size={14}/> View Generated Forms
+                       </button>
+                       <button
+                         onClick={() => viewChecklistPDF(selectedCandidate)}
+                         className="flex items-center gap-1 text-xs font-bold text-cyan-600 dark:text-cyan-400 hover:text-cyan-800 dark:hover:text-cyan-300 bg-cyan-50 dark:bg-cyan-900/20 px-3 py-1.5 rounded-lg border border-transparent hover:border-cyan-200 dark:hover:border-cyan-800 transition-all"
+                       >
+                         <ClipboardList size={14}/> View Checklist
                        </button>
                        <button
                          onClick={() => downloadChecklistPDF(selectedCandidate)}
@@ -1170,44 +1180,44 @@ export default function AdminDashboard({ user, onLogout }) {
                         type="text"
                         value={newAdmin.name}
                         onChange={e => setNewAdmin({ ...newAdmin, name: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                        className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 ${isDark ? 'bg-slate-600 border-slate-500 text-white placeholder-slate-400' : 'bg-white border-slate-200 text-slate-900'}`}
                         placeholder="Enter name"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1">Mobile</label>
+                      <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Mobile</label>
                       <input
                         type="tel"
                         value={newAdmin.mobile}
                         onChange={e => setNewAdmin({ ...newAdmin, mobile: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                        className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 ${isDark ? 'bg-slate-600 border-slate-500 text-white placeholder-slate-400' : 'bg-white border-slate-200 text-slate-900'}`}
                         placeholder="Enter mobile"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1">Email</label>
+                      <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Email</label>
                       <input
                         type="email"
                         value={newAdmin.email}
                         onChange={e => setNewAdmin({ ...newAdmin, email: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                        className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 ${isDark ? 'bg-slate-600 border-slate-500 text-white placeholder-slate-400' : 'bg-white border-slate-200 text-slate-900'}`}
                         placeholder="Enter email"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1">Password</label>
+                      <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Password</label>
                       <div className="relative">
                         <input
                           type={showPassword ? 'text' : 'password'}
                           value={newAdmin.password}
                           onChange={e => setNewAdmin({ ...newAdmin, password: e.target.value })}
-                          className="w-full px-3 py-2 pr-10 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                          className={`w-full px-3 py-2 pr-10 border rounded-lg text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 ${isDark ? 'bg-slate-600 border-slate-500 text-white placeholder-slate-400' : 'bg-white border-slate-200 text-slate-900'}`}
                           placeholder="Min 8 characters"
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                          className={`absolute right-2 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
                         >
                           {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
@@ -1225,30 +1235,30 @@ export default function AdminDashboard({ user, onLogout }) {
               
               {/* Admin List */}
               {loadingAdmins ? (
-                <div className="text-center py-8 text-slate-500">Loading admins...</div>
+                <div className={`text-center py-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Loading admins...</div>
               ) : (
                 <div className="space-y-3">
                   {adminList.map((admin, idx) => (
                     <div 
                       key={admin._id} 
-                      className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200 hover:bg-slate-100 transition-all"
+                      className={`flex items-center justify-between p-4 rounded-xl border transition-all ${isDark ? 'bg-slate-700 border-slate-600 hover:bg-slate-600' : 'bg-slate-50 border-slate-200 hover:bg-slate-100'}`}
                     >
                       <div className="flex items-center gap-3">
                         <div className={`h-10 w-10 rounded-full flex items-center justify-center font-bold text-white ${admin.role === 'super_admin' ? 'bg-purple-600' : 'bg-blue-600'}`}>
                           {admin.name?.charAt(0)?.toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-semibold text-slate-900">{admin.name}</p>
-                          <p className="text-xs text-slate-500">{admin.email}</p>
+                          <p className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{admin.name}</p>
+                          <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{admin.email}</p>
                         </div>
-                        <span className={`ml-2 px-2 py-0.5 text-xs rounded-full font-medium ${admin.role === 'super_admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                        <span className={`ml-2 px-2 py-0.5 text-xs rounded-full font-medium ${admin.role === 'super_admin' ? (isDark ? 'bg-purple-900/50 text-purple-300' : 'bg-purple-100 text-purple-700') : (isDark ? 'bg-blue-900/50 text-blue-300' : 'bg-blue-100 text-blue-700')}`}>
                           {admin.role === 'super_admin' ? 'Super Admin' : 'Admin'}
                         </span>
                       </div>
                       {admin.role !== 'super_admin' && user.role === 'super_admin' && (
                         <button
                           onClick={() => handleDeleteAdmin(admin._id)}
-                          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                          className={`p-2 rounded-lg transition-all ${isDark ? 'text-slate-400 hover:text-red-400 hover:bg-red-900/30' : 'text-slate-400 hover:text-red-500 hover:bg-red-50'}`}
                           title="Delete Admin"
                         >
                           <Trash2 size={16} />
@@ -1599,32 +1609,29 @@ function DetailRow({ label, value }) {
 
 function StatCard({ label, value, icon: Icon, color, delay = 0 }) {
   const { isDark } = useTheme();
-  const themes = {
-    blue: isDark 
-      ? 'bg-blue-900/30 text-blue-400 border-blue-800 hover:bg-blue-900/50' 
-      : 'bg-blue-50 text-blue-600 border-blue-100 hover:bg-blue-100',
-    amber: isDark 
-      ? 'bg-amber-900/30 text-amber-400 border-amber-800 hover:bg-amber-900/50' 
-      : 'bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100',
-    emerald: isDark 
-      ? 'bg-emerald-900/30 text-emerald-400 border-emerald-800 hover:bg-emerald-900/50' 
-      : 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100',
-    indigo: isDark 
-      ? 'bg-indigo-900/30 text-indigo-400 border-indigo-800 hover:bg-indigo-900/50' 
-      : 'bg-indigo-50 text-indigo-600 border-indigo-100 hover:bg-indigo-100'
+  
+  const iconColors = {
+    blue: isDark ? 'text-blue-400' : 'text-blue-600',
+    amber: isDark ? 'text-amber-400' : 'text-amber-600',
+    emerald: isDark ? 'text-emerald-400' : 'text-emerald-600',
+    indigo: isDark ? 'text-indigo-400' : 'text-indigo-600'
   };
 
   return (
     <div 
-      className={`p-6 rounded-2xl border ${themes[color]} shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer opacity-0 animate-fade-in-up`}
+      className={`p-6 rounded-2xl border shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer opacity-0 animate-fade-in-up ${
+        isDark 
+          ? 'bg-slate-800 border-slate-700 hover:bg-slate-750' 
+          : 'bg-white border-slate-200 hover:bg-slate-50'
+      }`}
       style={{ animationDelay: `${delay}ms`, animationFillMode: 'forwards' }}
     >
-       <div className={`p-3 rounded-xl transition-transform duration-200 hover:scale-110 ${isDark ? 'bg-slate-700' : 'bg-white/60'}`}><Icon size={20}/></div>
+       <div className={`p-3 rounded-xl transition-transform duration-200 hover:scale-110 ${iconColors[color]} ${isDark ? 'bg-slate-700' : 'bg-slate-100'}`}><Icon size={20}/></div>
        <div className="flex justify-between items-start mb-4">
           <div/>
        </div>
        <h3 className={`text-3xl font-bold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{value}</h3>
-       <p className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>{label}</p>
+       <p className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{label}</p>
     </div>
   );
 }

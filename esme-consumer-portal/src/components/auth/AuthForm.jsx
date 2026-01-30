@@ -166,72 +166,75 @@ export default function AuthForm({ onAuthSuccess }) {
             <img src={esmeLogo} alt="Esme Logo" className="h-12 mx-auto" />
           </div>
 
-          <div>
-            <h2 className={`text-2xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{isSignup ? 'Create Account' : 'Welcome'}</h2>
-            <p className={`mt-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{isSignup ? 'Enter your details to get started.' : 'Access your portal securely.'}</p>
+          <div className="transition-all duration-300 ease-out">
+            <h2 className={`text-2xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'} transition-all duration-300`}>
+              {isSignup ? 'Create Account' : 'Welcome'}
+            </h2>
+            <p className={`mt-2 ${isDark ? 'text-slate-400' : 'text-slate-500'} transition-all duration-300`}>
+              {isSignup ? 'Enter your details to get started.' : 'Access your portal securely.'}
+            </p>
           </div>
 
           {!isSignup && (
-            <div className={`flex p-1 rounded-xl mb-6 ${isDark ? 'bg-slate-700' : 'bg-slate-100'}`}>
+            <div className={`flex p-1 rounded-xl mb-6 ${isDark ? 'bg-slate-700' : 'bg-slate-100'} animate-fade-in`}>
               <button 
                 onClick={() => handleMethodChange('mobile')}
-                className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${loginMethod === 'mobile' ? isDark ? 'bg-slate-600 shadow text-white' : 'bg-white shadow text-slate-900' : isDark ? 'text-slate-400' : 'text-slate-500'}`}
+                className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all duration-300 ${loginMethod === 'mobile' ? isDark ? 'bg-slate-600 shadow text-white' : 'bg-white shadow text-slate-900' : isDark ? 'text-slate-400' : 'text-slate-500'}`}
               >Mobile</button>
               <button 
                 onClick={() => handleMethodChange('email')}
-                className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${loginMethod === 'email' ? isDark ? 'bg-slate-600 shadow text-white' : 'bg-white shadow text-slate-900' : isDark ? 'text-slate-400' : 'text-slate-500'}`}
+                className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all duration-300 ${loginMethod === 'email' ? isDark ? 'bg-slate-600 shadow text-white' : 'bg-white shadow text-slate-900' : isDark ? 'text-slate-400' : 'text-slate-500'}`}
               >Email</button>
             </div>
           )}
 
           <form onSubmit={handleAuth} className="space-y-5">
-            {isSignup && (
-              <>
-                <Input label="Full Name" name="name" required value={formData.name} onChange={handleChange} placeholder="John Doe" />
-                <Input label="Email Address" type="email" name="email" required value={formData.email} onChange={handleChange} placeholder="name@company.com" />
-                <div className="flex gap-2">
-                  <div className="w-20">
-                    <Input label="Code" value="+91" disabled />
+            <div 
+              key={isSignup ? 'signup' : 'login'} 
+              className="space-y-5 animate-fade-in-up"
+            >
+              {isSignup && (
+                <>
+                  <Input label="Full Name" name="name" required value={formData.name} onChange={handleChange} placeholder="John Doe" />
+                  <Input label="Email Address" type="email" name="email" required value={formData.email} onChange={handleChange} placeholder="name@company.com" />
+                  <div className="flex gap-2">
+                    <div className="w-20">
+                      <Input label="Code" value="+91" disabled />
+                    </div>
+                    <div className="flex-1">
+                      <Input label="Mobile Number" name="mobile" required value={formData.mobile} onChange={handleChange} placeholder="9876543210" maxLength={10} />
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <Input label="Mobile Number" name="mobile" required value={formData.mobile} onChange={handleChange} placeholder="9876543210" maxLength={10} />
+                </>
+              )}
+              
+              {!isSignup && (
+                loginMethod === 'email' ? (
+                  <Input label="Email Address" type="email" name="email" required value={formData.email} onChange={handleChange} placeholder="name@company.com" />
+                ) : (
+                  <div className="flex gap-2">
+                    <div className="w-20">
+                      <Input label="Code" value="+91" disabled />
+                    </div>
+                    <div className="flex-1">
+                      <Input label="Mobile Number" name="mobile" required value={formData.mobile} onChange={handleChange} placeholder="9876543210" maxLength={10} />
+                    </div>
                   </div>
-                </div>
-              </>
-            )}
-            
-            {!isSignup && (
-              loginMethod === 'email' ? (
-                <Input label="Email Address" type="email" name="email" required value={formData.email} onChange={handleChange} placeholder="name@company.com" />
-              ) : (
-                <div className="flex gap-2">
-                  <div className="w-20">
-                    <Input label="Code" value="+91" disabled />
-                  </div>
-                  <div className="flex-1">
-                    <Input label="Mobile Number" name="mobile" required value={formData.mobile} onChange={handleChange} placeholder="9876543210" maxLength={10} />
-                  </div>
-                </div>
-              )
-            )}
+                )
+              )}
 
-            {!isOtpSent && (
-              <Input label="Password" type="password" name="password" required value={formData.password} onChange={handleChange} placeholder="••••••••" />
-            )}
+              {!isOtpSent && (
+                <Input label="Password" type="password" name="password" required value={formData.password} onChange={handleChange} placeholder="••••••••" />
+              )}
 
-            {isOtpSent && !isSignup && (
-              <Input label="Enter OTP" name="otp" required value={formData.otp} onChange={handleChange} placeholder="••••••" maxLength={6} className="text-center tracking-widest font-bold" />
-            )}
+              {isOtpSent && !isSignup && (
+                <Input label="Enter OTP" name="otp" required value={formData.otp} onChange={handleChange} placeholder="••••••" maxLength={6} className="text-center tracking-widest font-bold" />
+              )}
+            </div>
 
             {error && (
-              <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-center gap-2">
+              <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-center gap-2 animate-fade-in">
                 <AlertCircle size={16} /> {error}
-              </div>
-            )}
-
-            {!isSignup && loginMethod === 'mobile' && !isOtpSent && (
-              <div className="text-right">
-                <button type="button" onClick={handleSendOtp} className="text-xs font-semibold text-teal-600">Login via OTP instead?</button>
               </div>
             )}
 
@@ -240,7 +243,11 @@ export default function AuthForm({ onAuthSuccess }) {
             </Button>
 
             <div className="text-center pt-2">
-              <button type="button" onClick={toggleMode} className="text-sm text-slate-600">
+              <button 
+                type="button" 
+                onClick={toggleMode} 
+                className="text-sm text-slate-600 transition-all duration-300 hover:text-teal-600 hover:scale-105 transform"
+              >
                 {isSignup ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
               </button>
             </div>
