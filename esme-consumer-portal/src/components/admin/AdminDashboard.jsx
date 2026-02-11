@@ -63,11 +63,17 @@ export default function AdminDashboard({ user, onLogout }) {
   const fetchAdmins = async () => {
     try {
       setLoadingAdmins(true);
-      const res = await fetch(`${API_URL}/admin/admins`);
+      const res = await fetch(`${API_URL}/admin/admins?userId=${user._id}`);
       const data = await res.json();
-      setAdmins(data);
+      if (Array.isArray(data)) {
+        setAdmins(data);
+      } else {
+        console.error('Invalid data format:', data);
+        setAdmins([]);
+      }
     } catch (error) {
       console.error('Error fetching admins:', error);
+      setAdmins([]);
     } finally {
       setLoadingAdmins(false);
     }
