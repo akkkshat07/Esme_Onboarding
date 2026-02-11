@@ -3,7 +3,7 @@ import {
   Users, UserPlus, Clock, CheckCircle2, Search, Menu, X, LogOut, Download, 
   FileText, ExternalLink, FolderOpen, Shield, Settings, Key, Eye, EyeOff, 
   Upload, Cloud, CloudOff, Home, ClipboardList, UserCog, FileSpreadsheet,
-  ChevronRight, MoreVertical, Trash2, Lock, Unlock, Plus, Pen, RotateCcw
+  ChevronRight, MoreVertical, Trash2, Lock, Unlock, Plus, Pen, RotateCcw, AlertCircle
 } from 'lucide-react';
 import EsmeLogo from '../../assets/Esme-Logo-01.png';
 const API_URL = import.meta.env.VITE_API_URL || '/api';
@@ -26,6 +26,16 @@ export default function AdminDashboard({ user, onLogout }) {
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+    mobile: user?.mobile || ''
+  });
+  const [profileError, setProfileError] = useState('');
+  const [profileSuccess, setProfileSuccess] = useState('');
+  const [updatingProfile, setUpdatingProfile] = useState(false);
+  const [updatingPassword, setUpdatingPassword] = useState(false);
   const [admins, setAdmins] = useState([]);
   const [loadingAdmins, setLoadingAdmins] = useState(false);
   const [showCreateAdminModal, setShowCreateAdminModal] = useState(false);
@@ -77,6 +87,76 @@ export default function AdminDashboard({ user, onLogout }) {
       console.error('Error fetching candidates:', error);
     } finally {
       setLoading(false);
+    }
+  };
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setPasswordError('');
+    setPasswordSuccess('');
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError('New passwords do not match');
+      return;
+    }
+    if (passwordForm.newPassword.length < 6) {
+      setPasswordError('Password must be at least 6 characters');
+      return;
+    }
+    try {
+      setUpdatingPassword(true);
+      const res = await fetch(`${API_URL}/admin/change-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: user.email,
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setPasswordSuccess('Password changed successfully');
+        setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        setTimeout(() => setPasswordSuccess(''), 3000);
+      } else {
+        setPasswordError(data.message || 'Failed to change password');
+      }
+    } catch (error) {
+      setPasswordError('Error changing password. Please try again.');
+    } finally {
+      setUpdatingPassword(false);
+    }
+  };
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    setProfileError('');
+    setProfileSuccess('');
+    if (!profileForm.name || !profileForm.email) {
+      setProfileError('Name and email are required');
+      return;
+    }
+    try {
+      setUpdatingProfile(true);
+      const res = await fetch(`${API_URL}/admin/update-profile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentEmail: user.email,
+          name: profileForm.name,
+          email: profileForm.email,
+          mobile: profileForm.mobile
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setProfileSuccess('Profile updated successfully');
+        setTimeout(() => setProfileSuccess(''), 3000);
+      } else {
+        setProfileError(data.message || 'Failed to update profile');
+      }
+    } catch (error) {
+      setProfileError('Error updating profile. Please try again.');
+    } finally {
+      setUpdatingProfile(false);
     }
   };
   const filteredCandidates = candidates.filter(c => {
@@ -843,6 +923,199 @@ export default function AdminDashboard({ user, onLogout }) {
               >
                 Delete Admin
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showProfileSettings && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full my-8">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-xl flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
+                  <Settings className="w-5 h-5 text-teal-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-800">Settings</h3>
+                  <p className="text-xs text-gray-500">Manage your account preferences</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowProfileSettings(false);
+                  setPasswordError('');
+                  setPasswordSuccess('');
+                  setProfileError('');
+                  setProfileSuccess('');
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="p-6 space-y-6">
+              <div className="bg-gradient-to-r from-teal-50 to-blue-50 rounded-lg p-4 border border-teal-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
+                    <UserCog className="w-6 h-6 text-teal-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800">{user?.name}</p>
+                    <p className="text-xs text-gray-600">{user?.email}</p>
+                    <span className="inline-block mt-1 px-2 py-0.5 bg-teal-600 text-white text-xs font-medium rounded">
+                      {user?.role === 'super_admin' ? 'Super Admin' : 'Admin'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+                  <UserCog className="w-4 h-4 text-gray-600" />
+                  <h4 className="text-sm font-semibold text-gray-800">Profile Information</h4>
+                </div>
+                <form onSubmit={handleUpdateProfile} className="space-y-4">
+                  {profileError && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-red-600">{profileError}</p>
+                    </div>
+                  )}
+                  {profileSuccess && (
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-green-600">{profileSuccess}</p>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1.5">Full Name</label>
+                      <input
+                        type="text"
+                        value={profileForm.name}
+                        onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                        placeholder="Enter your name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1.5">Email Address</label>
+                      <input
+                        type="email"
+                        value={profileForm.email}
+                        onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                        placeholder="Enter your email"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1.5">Mobile Number</label>
+                    <input
+                      type="tel"
+                      value={profileForm.mobile}
+                      onChange={(e) => setProfileForm({ ...profileForm, mobile: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                      placeholder="Enter your mobile number"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={updatingProfile}
+                    className="w-full px-4 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                  >
+                    {updatingProfile ? 'Updating...' : 'Update Profile'}
+                  </button>
+                </form>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+                  <Key className="w-4 h-4 text-gray-600" />
+                  <h4 className="text-sm font-semibold text-gray-800">Change Password</h4>
+                </div>
+                <form onSubmit={handleChangePassword} className="space-y-4">
+                  {passwordError && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-red-600">{passwordError}</p>
+                    </div>
+                  )}
+                  {passwordSuccess && (
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-green-600">{passwordSuccess}</p>
+                    </div>
+                  )}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1.5">Current Password</label>
+                    <div className="relative">
+                      <input
+                        type={showCurrentPassword ? 'text' : 'password'}
+                        value={passwordForm.currentPassword}
+                        onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                        className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                        placeholder="Enter current password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded transition-colors"
+                      >
+                        {showCurrentPassword ? <EyeOff className="w-4 h-4 text-gray-500" /> : <Eye className="w-4 h-4 text-gray-500" />}
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1.5">New Password</label>
+                    <div className="relative">
+                      <input
+                        type={showNewPassword ? 'text' : 'password'}
+                        value={passwordForm.newPassword}
+                        onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                        className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                        placeholder="Enter new password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded transition-colors"
+                      >
+                        {showNewPassword ? <EyeOff className="w-4 h-4 text-gray-500" /> : <Eye className="w-4 h-4 text-gray-500" />}
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1.5">Confirm New Password</label>
+                    <div className="relative">
+                      <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        value={passwordForm.confirmPassword}
+                        onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                        className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                        placeholder="Confirm new password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded transition-colors"
+                      >
+                        {showConfirmPassword ? <EyeOff className="w-4 h-4 text-gray-500" /> : <Eye className="w-4 h-4 text-gray-500" />}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-xs text-blue-800">
+                      <strong>Password Requirements:</strong> Minimum 6 characters
+                    </p>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={updatingPassword}
+                    className="w-full px-4 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                  >
+                    {updatingPassword ? 'Changing...' : 'Change Password'}
+                  </button>
+                </form>
+              </div>
             </div>
           </div>
         </div>

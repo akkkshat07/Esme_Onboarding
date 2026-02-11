@@ -896,9 +896,15 @@ app.delete('/api/admin/admins/:id', async (req, res) => {
 
 app.post('/api/admin/change-password', async (req, res) => {
   try {
-    const { userId, currentPassword, newPassword } = req.body;
+    const { userId, email, currentPassword, newPassword } = req.body;
     
-    const user = await User.findById(userId);
+    let user;
+    if (userId) {
+      user = await User.findById(userId);
+    } else if (email) {
+      user = await User.findOne({ email });
+    }
+    
     if (!user) {
       return res.status(404).json({ message: 'User not found.' });
     }
@@ -909,8 +915,8 @@ app.post('/api/admin/change-password', async (req, res) => {
     }
     
 
-    if (!newPassword || newPassword.length < 8) {
-      return res.status(400).json({ message: 'New password must be at least 8 characters.' });
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ message: 'New password must be at least 6 characters.' });
     }
     
     user.password = newPassword;
@@ -920,6 +926,36 @@ app.post('/api/admin/change-password', async (req, res) => {
     console.log(`🔐 Password changed for ${user.name} (${user.email})`);
     
     res.json({ success: true, message: 'Password changed successfully.' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.post('/api/admin/update-profile', async (req, res) => {
+  try {
+    const { currentEmail, name, email, mobile } = req.body;
+    
+    const user = await User.findOne({ email: currentEmail });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+    
+    if (email && email !== currentEmail) {
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.status(400).json({ message: 'Email already in use.' });
+      }
+    }
+    
+    if (name) user.name = name;
+    if (email) user.email = email;
+    if (mobile) user.mobile = mobile;
+    
+    await user.save();
+    
+    console.log(`✏️ Profile updated for ${user.name} (${user.email})`);
+    
+    res.json({ success: true, message: 'Profile updated successfully.', user: { name: user.name, email: user.email, mobile: user.mobile } });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
