@@ -63,7 +63,7 @@ export default function AdminDashboard({ user, onLogout }) {
   const fetchAdmins = async () => {
     try {
       setLoadingAdmins(true);
-      const res = await fetch(`${API_URL}/admin/list`);
+      const res = await fetch(`${API_URL}/admin/admins`);
       const data = await res.json();
       setAdmins(data);
     } catch (error) {
