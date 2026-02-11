@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { ChevronRight, FileText, Download, Upload, X } from 'lucide-react';
+import { ChevronRight, FileText, Download, Upload, X, Package } from 'lucide-react';
+import { generatePolicyAcknowledgment } from '../../utils/generatePolicyAcknowledgment';
+
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 export default function CandidateDetailView({ candidate, onBack, onApprove, onReject, onRefresh }) {
   const [showApproveModal, setShowApproveModal] = useState(false);
@@ -7,6 +10,7 @@ export default function CandidateDetailView({ candidate, onBack, onApprove, onRe
   const [department, setDepartment] = useState('');
   const [employeeId, setEmployeeId] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
+  const [downloadingZip, setDownloadingZip] = useState(false);
 
   if (!candidate) return null;
 
@@ -22,6 +26,43 @@ export default function CandidateDetailView({ candidate, onBack, onApprove, onRe
     onRefresh();
   };
 
+  const handleDownloadZip = async () => {
+    try {
+      setDownloadingZip(true);
+      const response = await fetch(`${API_URL}/candidates/${candidate._id}/download-zip`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to download ZIP');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const candidateName = (candidate.profileData?.fullName || candidate.name).replace(/[^a-zA-Z0-9]/g, '_');
+      const submissionDate = candidate.createdAt ? new Date(candidate.createdAt).toISOString().split('T')[0] : 'unknown';
+      a.download = `${candidateName}_${submissionDate}.zip`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading ZIP:', error);
+      alert('Failed to download ZIP file');
+    } finally {
+      setDownloadingZip(false);
+    }
+  };
+
+  const handleDownloadPolicyAcknowledgment = () => {
+    try {
+      const doc = generatePolicyAcknowledgment(candidate);
+      const fileName = `Policy_Acknowledgment_${(candidate.profileData?.fullName || candidate.name).replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+      doc.save(fileName);
+    } catch (error) {
+      console.error('Error generating policy acknowledgment:', error);
+      alert('Failed to generate policy acknowledgment');
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -33,6 +74,14 @@ export default function CandidateDetailView({ candidate, onBack, onApprove, onRe
           Back to Candidates
         </button>
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleDownloadZip}
+            disabled={downloadingZip}
+            className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium flex items-center gap-2 disabled:opacity-50"
+          >
+            <Package className="w-4 h-4" />
+            {downloadingZip ? 'Downloading...' : 'Download All (ZIP)'}
+          </button>
           {candidate.status !== 'approved' && candidate.status !== 'rejected' && (
             <>
               <button
@@ -195,6 +244,16 @@ export default function CandidateDetailView({ candidate, onBack, onApprove, onRe
                       icon={FileText}
                     />
                   )}
+                  <button
+                    onClick={handleDownloadPolicyAcknowledgment}
+                    className="w-full flex items-center justify-between px-3 py-2 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-purple-600" />
+                      <span className="text-xs font-medium text-gray-700">Policy Acknowledgment</span>
+                    </div>
+                    <Download className="w-3 h-3 text-purple-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </button>
                   {(!candidate.generatedForms || Object.keys(candidate.generatedForms).length === 0) && (
                     <p className="text-xs text-gray-500 italic py-3 text-center">No documents generated yet</p>
                   )}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, X, ShieldCheck, FileText, LogOut, CheckCircle2, Clock, ChevronDown, ChevronRight, Upload, Plus, Trash2, CreditCard, Building, BookOpen, Award, FileCheck, Heart, User, Key, Eye, EyeOff, Download, FileImage, Mail, ClipboardCheck, BookMarked } from 'lucide-react';
 import EsmeLogo from '../../assets/Esme-Logo-01.png';
+import { generatePolicyAcknowledgment } from '../../utils/generatePolicyAcknowledgment';
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const VERIFICATION_STEPS = [
   { id: 'aadhaar', label: 'Aadhaar', icon: ShieldCheck },
@@ -4018,6 +4019,27 @@ export default function CandidateDashboard({ user, onLogout }) {
                     </button>
                   </div>
                 ))}
+                <div className="flex items-center justify-between p-3 bg-purple-50 rounded border border-purple-200 hover:border-purple-400 transition-all">
+                  <div className="flex items-center gap-3">
+                    <ClipboardCheck className="w-5 h-5 text-purple-600" />
+                    <span className="text-sm font-medium text-gray-800">Policy Acknowledgment</span>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      try {
+                        const doc = generatePolicyAcknowledgment(user);
+                        doc.save(`Policy_Acknowledgment_${user.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
+                      } catch (error) {
+                        console.error('Error generating policy acknowledgment:', error);
+                        alert('Failed to generate policy acknowledgment');
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-purple-600 text-white rounded hover:bg-purple-700 transition-all text-xs font-medium flex items-center gap-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download
+                  </button>
+                </div>
               </div>
             </div>
           )}

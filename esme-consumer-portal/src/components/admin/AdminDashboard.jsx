@@ -225,31 +225,98 @@ export default function AdminDashboard({ user, onLogout }) {
     }
   };
   const exportCandidatesToExcel = () => {
-    const headers = ['Name', 'Email', 'Mobile', 'Status', 'Department', 'Employee ID', 'DOB', 'PAN', 'Aadhaar', 'Bank Account', 'IFSC', 'Registered Date'];
-    const rows = filteredCandidates.map(c => [
-      c.name || '',
-      c.email || '',
-      c.mobile || '',
-      c.status || '',
-      c.department || '',
-      c.employeeId || '',
-      c.dob || '',
-      c.panNumber || '',
-      c.aadhaarNumber || '',
-      c.bankAccount || '',
-      c.ifscCode || '',
-      c.createdAt ? new Date(c.createdAt).toLocaleDateString() : ''
-    ]);
+    const headers = [
+      'Name', 'Email', 'Mobile', 'Status', 'Date of Joining', 'Designation', 'Department', 'Division', 
+      'Employee Code', 'Work Location', 'Employment Type', 'Reporting Manager', 'Reporting Manager Designation',
+      'Father Name', 'Mother Name', 'Date of Birth', 'Age', 'Gender', 'Blood Group', 'Marital Status',
+      'Spouse Name', 'Religion', 'Nationality', 'Current Address', 'Current City', 'Current State', 'Current Pincode',
+      'Permanent Address', 'Permanent City', 'Permanent State', 'Permanent Pincode', 
+      'PAN Number', 'Aadhaar Number', 'Passport Number', 'Passport Validity', 'Driving License',
+      'Bank Name', 'Bank Branch', 'Bank Account Number', 'IFSC Code', 'MICR Code', 'Account Holder Name',
+      'UAN Number', 'Previous PF Number', 'ESIC Number', 'Emergency Contact Name', 'Emergency Contact Relation',
+      'Emergency Contact Mobile', 'Emergency Contact Address', 'Highest Qualification', 'University', 
+      'Year of Passing', 'Registered Date', 'Submission Date', 'Approved By', 'Approved At', 'Rejected By', 
+      'Rejected At', 'Rejection Reason', 'HR Verified'
+    ];
+    
+    const rows = filteredCandidates.map(c => {
+      const pd = c.profileData || {};
+      return [
+        c.name || pd.fullName || '',
+        c.email || pd.personalEmail || '',
+        c.mobile || pd.mobileNumber || '',
+        c.status || '',
+        pd.dateOfJoining || '',
+        pd.designation || '',
+        pd.department || '',
+        pd.division || '',
+        pd.employeeCode || '',
+        pd.workLocation || '',
+        pd.employmentType || '',
+        pd.reportingManager || '',
+        pd.reportingManagerDesignation || '',
+        pd.fatherName || '',
+        pd.motherName || '',
+        pd.dateOfBirth || '',
+        pd.age || '',
+        pd.gender || '',
+        pd.bloodGroup || '',
+        pd.maritalStatus || '',
+        pd.spouseName || '',
+        pd.religion || '',
+        pd.nationality || '',
+        pd.currentAddress || '',
+        pd.currentCity || '',
+        pd.currentState || '',
+        pd.currentPincode || '',
+        pd.permanentAddress || '',
+        pd.permanentCity || '',
+        pd.permanentState || '',
+        pd.permanentPincode || '',
+        pd.panNumber || '',
+        pd.aadhaarNumber || '',
+        pd.passportNumber || '',
+        pd.passportValidity || '',
+        pd.drivingLicense || '',
+        pd.bankName || '',
+        pd.bankBranch || '',
+        pd.bankAccountNumber || '',
+        pd.ifscCode || '',
+        pd.micrCode || '',
+        pd.accountHolderName || '',
+        pd.uanNumber || '',
+        pd.previousPFNumber || '',
+        pd.esicNumber || '',
+        pd.emergencyContactName || '',
+        pd.emergencyContactRelation || '',
+        pd.emergencyContactMobile || '',
+        pd.emergencyContactAddress || '',
+        pd.joiningFormData?.educationList?.[0]?.qualification || pd.highestQualification || '',
+        pd.joiningFormData?.educationList?.[0]?.university || pd.university || '',
+        pd.joiningFormData?.educationList?.[0]?.yearOfPassing || pd.yearOfPassing || '',
+        c.createdAt ? new Date(c.createdAt).toLocaleDateString() : '',
+        c.updatedAt ? new Date(c.updatedAt).toLocaleDateString() : '',
+        c.approvedBy || '',
+        c.approvedAt ? new Date(c.approvedAt).toLocaleDateString() : '',
+        c.rejectedBy || '',
+        c.rejectedAt ? new Date(c.rejectedAt).toLocaleDateString() : '',
+        c.rejectionReason || '',
+        c.hrVerified ? 'Yes' : 'No'
+      ];
+    });
+    
     let csv = headers.join(',') + '\n';
     rows.forEach(row => {
-      csv += row.map(cell => `"${cell}"`).join(',') + '\n';
+      csv += row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',') + '\n';
     });
-    const blob = new Blob([csv], { type: 'text/csv' });
+    
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `candidates_${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `candidates_comprehensive_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
+    window.URL.revokeObjectURL(url);
   };
   const filteredCandidates = candidates.filter(c => {
     const matchesSearch = c.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||

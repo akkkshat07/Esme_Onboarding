@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import archiver from 'archiver';
 import { fileURLToPath } from 'url';
 import User from './models/User.js';
 import { appendToSheet } from './services/googleSheets.js';
@@ -188,6 +189,17 @@ app.get('/api/candidates', async (req, res) => {
   }
 });
 
+app.get('/api/candidates/:id', async (req, res) => {
+  try {
+    const candidate = await User.findById(req.params.id);
+    if (!candidate || candidate.role !== 'candidate') {
+      return res.status(404).json({ message: 'Candidate not found' });
+    }
+    res.json(candidate);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
 app.get('/api/candidate/:email', async (req, res) => {
   try {
@@ -248,6 +260,67 @@ app.post('/api/save-profile', async (req, res) => {
   }
 });
 
+app.get('/api/candidates/:id/download-zip', async (req, res) => {
+  try {
+    const candidate = await User.findById(req.params.id);
+    if (!candidate || candidate.role !== 'candidate') {
+      return res.status(404).json({ message: 'Candidate not found' });
+    }
+
+    const candidateName = (candidate.profileData?.fullName || candidate.name).replace(/[^a-zA-Z0-9]/g, '_');
+    const submissionDate = candidate.createdAt ? new Date(candidate.createdAt).toISOString().split('T')[0] : 'unknown';
+    const zipFileName = `${candidateName}_${submissionDate}.zip`;
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${zipFileName}"`);
+
+    const archive = archiver('zip', { zlib: { level: 9 } });
+
+    archive.on('error', (err) => {
+      console.error('Archive error:', err);
+      res.status(500).json({ message: 'Error creating ZIP file' });
+    });
+
+    archive.pipe(res);
+
+    if (candidate.documents && candidate.documents.length > 0) {
+      for (const doc of candidate.documents) {
+        if (doc.localUrl && fs.existsSync(doc.localUrl)) {
+          const fileName = doc.fileName || path.basename(doc.localUrl);
+          archive.file(doc.localUrl, { name: `uploaded/${fileName}` });
+        }
+      }
+    }
+
+    const generatedPdfPath = path.join(__dirname, 'temp_pdfs');
+    if (!fs.existsSync(generatedPdfPath)) {
+      fs.mkdirSync(generatedPdfPath, { recursive: true });
+    }
+
+    const generatedDocs = [
+      'Joining_Form.pdf',
+      'Medical_Insurance_Form.pdf',
+      'Self_Declaration.pdf',
+      'Form_11.pdf',
+      'Form_F.pdf',
+      'PF_Nomination.pdf',
+      'Checklist.pdf',
+      'Policy_Acknowledgment.pdf'
+    ];
+
+    generatedDocs.forEach(docName => {
+      const docPath = path.join(generatedPdfPath, `${candidate._id}_${docName}`);
+      if (fs.existsSync(docPath)) {
+        archive.file(docPath, { name: `generated/${docName}` });
+      }
+    });
+
+    archive.finalize();
+  } catch (err) {
+    console.error('ZIP download error:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
 
 const handleUpload = (req, res, next) => {
   upload.single('file')(req, res, (err) => {
