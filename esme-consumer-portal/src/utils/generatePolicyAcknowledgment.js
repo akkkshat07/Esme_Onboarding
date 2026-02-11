@@ -67,52 +67,24 @@ export const generatePolicyAcknowledgment = (candidateData) => {
 
   const policies = [
     {
-      title: 'Code of Conduct',
-      content: 'I have received, read, and understood the Company\'s Code of Conduct. I agree to abide by all policies, procedures, and ethical standards outlined therein.'
+      title: 'Code of Conduct & Professional Ethics',
+      content: 'I have received, read, and understood the Company\'s Code of Conduct and Professional Ethics Policy. I agree to maintain the highest standards of professional behavior, integrity, and ethical conduct in all my interactions with colleagues, clients, and stakeholders. I will treat all individuals with respect and dignity, and refrain from any behavior that could be considered discriminatory, harassing, or unprofessional.'
     },
     {
       title: 'Confidentiality & Non-Disclosure',
-      content: 'I acknowledge my responsibility to maintain confidentiality of all proprietary information, trade secrets, client data, and business strategies. I will not disclose any confidential information during or after my employment.'
+      content: 'I acknowledge my responsibility to maintain strict confidentiality of all proprietary information, trade secrets, client data, business strategies, and any other confidential information I may have access to during my employment. I understand that unauthorized disclosure of confidential information is a serious breach of trust and may result in legal action. I agree not to disclose any confidential information during or after my employment with ESME Consumer (P) Ltd.'
     },
     {
-      title: 'Information Security Policy',
-      content: 'I have been briefed on the Company\'s Information Security Policy. I agree to protect company data, use systems responsibly, maintain password security, and report any security incidents immediately.'
+      title: 'Information Security & Data Protection',
+      content: 'I have been briefed on the Company\'s Information Security and Data Protection Policy. I agree to protect company data and systems, use technology resources responsibly and only for authorized purposes, maintain password security and not share credentials with others, report any security incidents or data breaches immediately, and comply with all applicable data privacy laws and regulations including GDPR requirements.'
     },
     {
-      title: 'Attendance & Leave Policy',
-      content: 'I understand and agree to comply with the Company\'s attendance requirements, working hours, leave application procedures, and timekeeping systems.'
+      title: 'Attendance, Leave & Working Hours',
+      content: 'I understand and agree to comply with the Company\'s policies regarding attendance, punctuality, working hours, and leave management. I will maintain regular attendance, arrive on time for work, follow proper procedures for requesting leave and time off, accurately record my working hours using the company\'s timekeeping systems, and inform my supervisor promptly in case of absence or delay.'
     },
     {
-      title: 'Performance Management',
-      content: 'I acknowledge that my performance will be evaluated periodically and agree to participate in performance reviews, goal-setting exercises, and professional development activities.'
-    },
-    {
-      title: 'Health & Safety',
-      content: 'I commit to following all workplace health and safety guidelines, reporting hazards, using protective equipment when required, and maintaining a safe working environment.'
-    },
-    {
-      title: 'Anti-Harassment & Equal Opportunity',
-      content: 'I acknowledge the Company\'s commitment to providing a harassment-free workplace. I agree to treat all colleagues with respect and report any incidents of discrimination or harassment.'
-    },
-    {
-      title: 'Social Media & Communication Policy',
-      content: 'I understand the guidelines for professional communication and social media usage. I will not make unauthorized statements about the Company or disclose confidential information online.'
-    },
-    {
-      title: 'Conflict of Interest',
-      content: 'I declare that I have no conflicts of interest that would interfere with my duties. I agree to disclose any potential conflicts and seek approval before engaging in outside employment or business activities.'
-    },
-    {
-      title: 'Intellectual Property',
-      content: 'I acknowledge that all work products, inventions, and intellectual property created during my employment belong to the Company. I assign all rights to such work to the Company.'
-    },
-    {
-      title: 'Data Privacy & GDPR Compliance',
-      content: 'I understand the importance of data privacy and agree to handle personal data in compliance with applicable laws and Company policies.'
-    },
-    {
-      title: 'Termination & Exit Procedures',
-      content: 'I acknowledge that I must follow proper exit procedures upon termination, including return of Company property, completion of exit formalities, and continued adherence to confidentiality obligations.'
+      title: 'Workplace Safety & Health',
+      content: 'I commit to following all workplace health and safety guidelines and regulations. I will report any workplace hazards, unsafe conditions, or accidents immediately to my supervisor, use protective equipment when required and follow safety protocols, maintain a clean and safe working environment, participate in safety training programs as required, and not engage in any behavior that could endanger myself or others in the workplace.'
     }
   ];
 
