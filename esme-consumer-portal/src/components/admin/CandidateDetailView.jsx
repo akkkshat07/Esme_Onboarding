@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, FileText, Download, Upload, X, Package } from 'lucide-react';
+import { ChevronRight, FileText, Download, Upload, X, Package, Trash2 } from 'lucide-react';
 import { generatePolicyAcknowledgment } from '../../utils/generatePolicyAcknowledgment';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
@@ -7,6 +7,7 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 export default function CandidateDetailView({ candidate, onBack, onApprove, onReject, onRefresh }) {
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [department, setDepartment] = useState('');
   const [employeeId, setEmployeeId] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
@@ -24,6 +25,26 @@ export default function CandidateDetailView({ candidate, onBack, onApprove, onRe
     onReject(candidate._id, rejectionReason);
     setShowRejectModal(false);
     onRefresh();
+  };
+
+  const handleDelete = async () => {
+    try {
+      const response = await fetch(`${API_URL}/candidates/${candidate._id}`, {
+        method: 'DELETE'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete candidate');
+      }
+      
+      alert('Candidate deleted successfully');
+      setShowDeleteModal(false);
+      onBack();
+      onRefresh();
+    } catch (error) {
+      console.error('Error deleting candidate:', error);
+      alert('Failed to delete candidate');
+    }
   };
 
   const handleDownloadZip = async () => {
@@ -90,6 +111,13 @@ export default function CandidateDetailView({ candidate, onBack, onApprove, onRe
           >
             <Package className="w-4 h-4" />
             {downloadingZip ? 'Downloading...' : 'Download All (ZIP)'}
+          </button>
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium flex items-center gap-2"
+          >
+            <Trash2 className="w-4 h-4" />
+            Delete
           </button>
           {candidate.status !== 'approved' && candidate.status !== 'rejected' && (
             <>
@@ -382,6 +410,34 @@ export default function CandidateDetailView({ candidate, onBack, onApprove, onRe
                 className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm font-medium"
               >
                 Reject
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {showDeleteModal && (
+        <Modal onClose={() => setShowDeleteModal(false)}>
+          <h3 className="text-lg font-bold text-red-600 mb-4">Delete Candidate</h3>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-700">
+              Are you sure you want to permanently delete <span className="font-semibold">{candidate.name}</span>?
+            </p>
+            <p className="text-sm text-red-600 font-medium">
+              ⚠️ This action cannot be undone. All candidate data, documents, and records will be permanently removed from the database.
+            </p>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+              >
+                Delete Permanently
               </button>
             </div>
           </div>
