@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import gsap from 'gsap';
 import { 
   Users, UserPlus, Clock, CheckCircle2, Search, Menu, X, LogOut, Download, 
   FileText, ExternalLink, FolderOpen, Shield, Settings, Key, Eye, EyeOff, 
@@ -7,6 +8,7 @@ import {
 } from 'lucide-react';
 import EsmeLogo from '../../assets/Esme-Logo-01.png';
 import CandidateDetailView from './CandidateDetailView';
+import { fadeInUp, staggerFadeInUp, scaleIn, modalEnter } from '../../utils/gsapAnimations';
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const SIDEBAR_MENU = [
   { id: 'dashboard', label: 'Dashboard', icon: Home },
@@ -53,6 +55,26 @@ export default function AdminDashboard({ user, onLogout }) {
     role: 'admin'
   });
   const [adminSearchTerm, setAdminSearchTerm] = useState('');
+  
+  const statsCardsRef = useRef([]);
+  const candidateRowsRef = useRef([]);
+
+  useEffect(() => {
+    if (statsCardsRef.current.length > 0 && activeSection === 'dashboard') {
+      staggerFadeInUp(statsCardsRef.current.filter(el => el), 0.1);
+    }
+  }, [activeSection, stats]);
+
+  useEffect(() => {
+    if (candidateRowsRef.current.length > 0) {
+      gsap.fromTo(
+        candidateRowsRef.current.filter(el => el),
+        { opacity: 0, x: -20 },
+        { opacity: 1, x: 0, duration: 0.4, stagger: 0.05, ease: 'power2.out' }
+      );
+    }
+  }, [filteredCandidates]);
+
   useEffect(() => {
     fetchCandidates();
     checkDriveStatus();
@@ -340,7 +362,7 @@ export default function AdminDashboard({ user, onLogout }) {
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-gray-800">Dashboard Overview</h2>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all-smooth hover:scale-105-smooth animate-slideUp">
+        <div ref={(el) => (statsCardsRef.current[0] = el)} className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500 font-medium">Total Candidates</p>
@@ -351,7 +373,7 @@ export default function AdminDashboard({ user, onLogout }) {
             </div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+        <div ref={(el) => (statsCardsRef.current[1] = el)} className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500 font-medium">Pending</p>
@@ -362,7 +384,7 @@ export default function AdminDashboard({ user, onLogout }) {
             </div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+        <div ref={(el) => (statsCardsRef.current[2] = el)} className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500 font-medium">Completed</p>
@@ -373,7 +395,7 @@ export default function AdminDashboard({ user, onLogout }) {
             </div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+        <div ref={(el) => (statsCardsRef.current[3] = el)} className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500 font-medium">Verified</p>
