@@ -1,5 +1,4 @@
 import { uploadPdfToDrive } from './driveUpload';
-
 export const generateMedicalInsuranceFormPDF = async (candidate) => {
   const jsPDF = (await import('jspdf')).default;
   const doc = new jsPDF('p', 'mm', 'a4');
@@ -7,7 +6,6 @@ export const generateMedicalInsuranceFormPDF = async (candidate) => {
   const pageHeight = doc.internal.pageSize.getHeight();
   let yPosition = 8;
   const margin = 12;
-
   const addSectionTitle = (title) => {
     yPosition += 2;
     doc.setFontSize(11);
@@ -18,7 +16,6 @@ export const generateMedicalInsuranceFormPDF = async (candidate) => {
     doc.text(title, margin + 2, yPosition);
     yPosition += 8;
   };
-
   const addField = (label, value) => {
     doc.setFontSize(8);
     doc.setTextColor(60, 80, 100);
@@ -32,7 +29,6 @@ export const generateMedicalInsuranceFormPDF = async (candidate) => {
     doc.text(lines, margin + 40, yPosition);
     yPosition += 6;
   };
-
   const addTwoColumnFields = (label1, value1, label2, value2) => {
     const col1X = margin;
     const col2X = (pageWidth / 2) + 2;
@@ -51,14 +47,12 @@ export const generateMedicalInsuranceFormPDF = async (candidate) => {
     doc.text(val2.toString().substring(0, 22), col2X + labelWidth, yPosition);
     yPosition += 6;
   };
-
   const checkPageBreak = (height = 15) => {
     if (yPosition + height > pageHeight - 15) {
       doc.addPage();
       yPosition = 10;
     }
   };
-
   doc.setFontSize(18);
   doc.setTextColor(20, 40, 80);
   doc.setFont(undefined, 'bold');
@@ -69,20 +63,17 @@ export const generateMedicalInsuranceFormPDF = async (candidate) => {
   doc.setFont(undefined, 'normal');
   doc.text('Esme Consumer (P) Ltd.', pageWidth / 2, yPosition, { align: 'center' });
   yPosition += 10;
-
   addSectionTitle('EMPLOYEE INFORMATION');
   checkPageBreak(25);
   addTwoColumnFields('Full Name', candidate.name, 'Date of Birth', candidate.profileData?.dob);
   addTwoColumnFields('Email', candidate.email, 'Mobile', candidate.mobile);
   addField('Current Address', candidate.profileData?.address);
-
   checkPageBreak(30);
   addSectionTitle('HEALTH INFORMATION');
   doc.setFontSize(8);
   doc.setTextColor(60, 80, 100);
   doc.text('Please check all that apply:', margin, yPosition);
   yPosition += 5;
-
   const healthConditions = ['Diabetes', 'Hypertension', 'Heart Disease', 'Asthma', 'Thyroid Issues', 'Other Allergies'];
   healthConditions.forEach((condition) => {
     doc.setTextColor(20, 30, 50);
@@ -90,13 +81,11 @@ export const generateMedicalInsuranceFormPDF = async (candidate) => {
     doc.text('☐ ' + condition, margin + 8, yPosition);
     yPosition += 5;
   });
-
   checkPageBreak(30);
   addSectionTitle('NOMINEE INFORMATION');
   addField('Nominee Name', candidate.profileData?.emergencyContact);
   addTwoColumnFields('Relation', candidate.profileData?.emergencyRelation, 'Contact No.', '');
   addField('Address', candidate.profileData?.address);
-
   checkPageBreak(25);
   addSectionTitle('DECLARATION');
   yPosition += 2;
@@ -106,7 +95,6 @@ export const generateMedicalInsuranceFormPDF = async (candidate) => {
   const wrappedDecl = doc.splitTextToSize(declarationText, pageWidth - 2 * margin - 5);
   doc.text(wrappedDecl, margin, yPosition);
   yPosition += wrappedDecl.length * 4 + 8;
-
   checkPageBreak(15);
   yPosition += 3;
   doc.setDrawColor(100);
@@ -115,21 +103,16 @@ export const generateMedicalInsuranceFormPDF = async (candidate) => {
   doc.text('Signature', margin + 2, yPosition + 4);
   doc.line(pageWidth - margin - 35, yPosition, pageWidth - margin, yPosition);
   doc.text('Date', pageWidth - margin - 20, yPosition + 4);
-
   const footerY = pageHeight - 8;
   doc.setFontSize(7);
   doc.setTextColor(120, 130, 140);
   doc.text(`Generated: ${new Date().toLocaleDateString()} | Esme Consumer`, margin, footerY);
-
   return doc;
 };
-
 export const downloadMedicalInsuranceFormPDF = async (candidate) => {
   const doc = await generateMedicalInsuranceFormPDF(candidate);
   const fileName = `${candidate.name}_Medical_Insurance_${new Date().toISOString().split('T')[0]}.pdf`;
   doc.save(fileName);
-  
-  // Upload to Google Drive if email available
   if (candidate.email) {
     try {
       const pdfBlob = doc.output('blob');

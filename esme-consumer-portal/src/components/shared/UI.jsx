@@ -2,15 +2,15 @@ import React from 'react';
 
 export const Input = ({ label, icon: Icon, error, ...props }) => (
   <div className="space-y-1.5 w-full">
-    {label && <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1">{label}</label>}
+    {label && <label className="text-xs font-bold text-slate-600 uppercase tracking-wider ml-1">{label}</label>}
     <div className="relative group">
       {Icon && (
-        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 group-focus-within:text-teal-600 dark:group-focus-within:text-teal-400 transition-all duration-200">
+        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-teal-600 transition-all duration-200">
           <Icon size={18} />
         </div>
       )}
       <input
-        className={`w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl py-3 outline-none transition-all duration-200 ease-out placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 focus:shadow-lg focus:shadow-teal-500/10 hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-md ${Icon ? 'pl-10 pr-4' : 'px-4'} ${props.readOnly ? '!bg-slate-100 dark:!bg-slate-900 !text-slate-500 dark:!text-slate-400 cursor-not-allowed' : ''} ${props.className || ''}`}
+        className={`w-full bg-white border border-slate-200 text-slate-900 rounded-xl py-3 outline-none transition-all duration-200 ease-out placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 focus:shadow-lg focus:shadow-teal-500/10 hover:border-slate-300 hover:shadow-md ${Icon ? 'pl-10 pr-4' : 'px-4'} ${props.readOnly ? '!bg-slate-100 !text-slate-500 cursor-not-allowed' : ''} ${props.className || ''}`}
         {...props}
       />
     </div>
@@ -23,10 +23,10 @@ export const Button = ({ children, loading, variant = 'primary', className = '',
   
   const variants = {
     primary: 'bg-gradient-to-r from-teal-600 to-teal-500 text-white px-7 py-3.5 shadow-lg shadow-teal-500/25 hover:shadow-xl hover:shadow-teal-500/30 hover:-translate-y-0.5',
-    secondary: 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 px-6 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-md dark:shadow-slate-900/10',
+    secondary: 'bg-white text-slate-700 border border-slate-200 px-6 py-3 hover:bg-slate-50 hover:border-slate-300 hover:shadow-md',
     teal: 'bg-gradient-to-r from-teal-600 to-teal-500 text-white px-7 py-3.5 shadow-lg shadow-teal-500/25 hover:shadow-xl hover:shadow-teal-500/30 hover:-translate-y-0.5',
     danger: 'bg-gradient-to-r from-red-600 to-red-500 text-white px-7 py-3.5 shadow-lg shadow-red-500/25 hover:shadow-xl hover:shadow-red-500/30 hover:-translate-y-0.5',
-    ghost: 'bg-transparent text-slate-600 dark:text-slate-400 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white',
+    ghost: 'bg-transparent text-slate-600 px-4 py-2 hover:bg-slate-100 hover:text-slate-900',
   };
 
   return (
@@ -45,7 +45,7 @@ export const Button = ({ children, loading, variant = 'primary', className = '',
 
 export const Card = ({ children, className = '', hover = true, ...props }) => (
   <div 
-    className={`bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 transition-all duration-300 ease-out ${hover ? 'hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-slate-900/50 hover:-translate-y-1 hover:border-slate-300 dark:hover:border-slate-600' : ''} ${className}`}
+    className={`bg-white border border-slate-200 rounded-2xl p-6 transition-all duration-300 ease-out ${hover ? 'hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1 hover:border-slate-300' : ''} ${className}`}
     {...props}
   >
     {children}

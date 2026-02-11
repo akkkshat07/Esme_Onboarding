@@ -18,18 +18,18 @@ const VantaBackground = ({ children, className = '' }) => {
         minWidth: 200.00,
         scale: 1.00,
         scaleMobile: 1.00,
-        backgroundColor: 0x0f172a,
+        backgroundColor: 0xffffff,
         backgroundAlpha: 1,
-        color1: 0x0d9488,
-        color2: 0x17483f,
+        color1: 0x3a494,
+        color2: 0xd1ff,
         colorMode: "varianceGradient",
         quantity: 4,
-        birdSize: 1.5,
-        wingSpan: 25,
-        speedLimit: 4,
-        separation: 30,
-        alignment: 30,
-        cohesion: 30
+        birdSize: 1.60,
+        wingSpan: 30,
+        speedLimit: 5,
+        separation: 94,
+        alignment: 20,
+        cohesion: 48
       });
       setVantaEffect(effect);
     }

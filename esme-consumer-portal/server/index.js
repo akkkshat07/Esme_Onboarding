@@ -938,6 +938,40 @@ app.get('/api/admin/profile/:id', async (req, res) => {
   }
 });
 
+// Candidate Password Change
+app.post('/api/change-password', async (req, res) => {
+  try {
+    const { email, currentPassword, newPassword } = req.body;
+    
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+    
+    // Verify current password
+    if (user.password !== currentPassword) {
+      return res.status(401).json({ message: 'Current password is incorrect.' });
+    }
+    
+    // Validate new password
+    if (!newPassword || newPassword.length < 8) {
+      return res.status(400).json({ message: 'New password must be at least 8 characters.' });
+    }
+    
+    // Update password
+    user.password = newPassword;
+    user.lastPasswordChange = new Date();
+    await user.save();
+    
+    console.log(`🔐 Password changed for ${user.name} (${user.email})`);
+    
+    res.json({ success: true, message: 'Password changed successfully.' });
+  } catch (err) {
+    console.error('Error changing password:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 
 
 
