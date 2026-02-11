@@ -21,15 +21,16 @@ export const generatePolicyAcknowledgment = (candidateData) => {
     return false;
   };
 
+  // Header
   doc.setFillColor(0, 51, 102);
   doc.rect(0, 0, pageWidth, 30, 'F');
+  doc.setTextColor(255, 255, 255);
   addText('ESME CONSUMER (P) LTD', pageWidth / 2, 15, {
     fontSize: 16,
     fontStyle: 'bold',
     font: 'helvetica',
     align: 'center'
   });
-  doc.setTextColor(255, 255, 255);
   addText('POLICY ACKNOWLEDGMENT & DECLARATION', pageWidth / 2, 22, {
     fontSize: 12,
     align: 'center'
@@ -38,6 +39,7 @@ export const generatePolicyAcknowledgment = (candidateData) => {
 
   yPos = 45;
 
+  // Employee Information
   addText('Employee Information', margin, yPos, { fontSize: 12, fontStyle: 'bold' });
   yPos += 8;
 
@@ -62,66 +64,56 @@ export const generatePolicyAcknowledgment = (candidateData) => {
   doc.line(margin, yPos, pageWidth - margin, yPos);
   yPos += 10;
 
+  // Policy Acknowledgment Section
   addText('POLICY ACKNOWLEDGMENT', margin, yPos, { fontSize: 12, fontStyle: 'bold' });
   yPos += 10;
 
-  const policies = [
-    {
-      title: 'Code of Conduct & Professional Ethics',
-      content: 'I have received, read, and understood the Company\'s Code of Conduct and Professional Ethics Policy. I agree to maintain the highest standards of professional behavior, integrity, and ethical conduct in all my interactions with colleagues, clients, and stakeholders. I will treat all individuals with respect and dignity, and refrain from any behavior that could be considered discriminatory, harassing, or unprofessional.'
-    },
-    {
-      title: 'Confidentiality & Non-Disclosure',
-      content: 'I acknowledge my responsibility to maintain strict confidentiality of all proprietary information, trade secrets, client data, business strategies, and any other confidential information I may have access to during my employment. I understand that unauthorized disclosure of confidential information is a serious breach of trust and may result in legal action. I agree not to disclose any confidential information during or after my employment with ESME Consumer (P) Ltd.'
-    },
-    {
-      title: 'Information Security & Data Protection',
-      content: 'I have been briefed on the Company\'s Information Security and Data Protection Policy. I agree to protect company data and systems, use technology resources responsibly and only for authorized purposes, maintain password security and not share credentials with others, report any security incidents or data breaches immediately, and comply with all applicable data privacy laws and regulations including GDPR requirements.'
-    },
-    {
-      title: 'Attendance, Leave & Working Hours',
-      content: 'I understand and agree to comply with the Company\'s policies regarding attendance, punctuality, working hours, and leave management. I will maintain regular attendance, arrive on time for work, follow proper procedures for requesting leave and time off, accurately record my working hours using the company\'s timekeeping systems, and inform my supervisor promptly in case of absence or delay.'
-    },
-    {
-      title: 'Workplace Safety & Health',
-      content: 'I commit to following all workplace health and safety guidelines and regulations. I will report any workplace hazards, unsafe conditions, or accidents immediately to my supervisor, use protective equipment when required and follow safety protocols, maintain a clean and safe working environment, participate in safety training programs as required, and not engage in any behavior that could endanger myself or others in the workplace.'
-    }
+  checkPageBreak(20);
+  addText('I hereby acknowledge and confirm that:', margin, yPos, { fontStyle: 'bold' });
+  yPos += 8;
+
+  const acknowledgments = [
+    'I have received, accessed, and carefully read the complete "ESME Company Policies" document provided to me during the onboarding process.',
+    'I have had sufficient opportunity to review all company policies, procedures, and guidelines contained in the policies document.',
+    'I understand all the policies, rules, regulations, and expectations outlined in the company policies document.',
+    'I agree to comply with and abide by all policies, procedures, and guidelines set forth by ESME Consumer (P) Ltd.',
+    'I understand that violation of any company policy may result in disciplinary action, up to and including termination of employment.',
+    'I acknowledge that the company reserves the right to modify, amend, or update policies at any time, and I will be notified of any such changes.',
+    'I understand that my continued employment is contingent upon my compliance with all company policies and procedures.'
   ];
 
-  policies.forEach((policy, index) => {
-    checkPageBreak(20);
-    doc.setFillColor(240, 240, 240);
-    doc.rect(margin - 2, yPos - 5, pageWidth - 2 * margin + 4, 8, 'F');
-    addText(`${index + 1}. ${policy.title}`, margin, yPos, { fontStyle: 'bold' });
-    yPos += 8;
-    
+  acknowledgments.forEach((ack, index) => {
     checkPageBreak(15);
-    const splitContent = doc.splitTextToSize(policy.content, pageWidth - 2 * margin - 10);
-    splitContent.forEach(line => {
-      checkPageBreak();
-      addText(line, margin + 5, yPos, { fontSize: 9 });
-      yPos += 5;
+    const bulletPoint = `${index + 1}.`;
+    const wrappedText = doc.splitTextToSize(ack, pageWidth - 2 * margin - 15);
+    addText(bulletPoint, margin + 5, yPos);
+    wrappedText.forEach((line, lineIndex) => {
+      if (lineIndex > 0) checkPageBreak(6);
+      addText(line, margin + 15, yPos);
+      yPos += 6;
     });
-    yPos += 3;
+    yPos += 2;
   });
 
   yPos += 10;
   checkPageBreak(30);
+  doc.setDrawColor(0, 51, 102);
   doc.line(margin, yPos, pageWidth - margin, yPos);
   yPos += 10;
 
+  // Declaration Section
   addText('DECLARATION', margin, yPos, { fontSize: 12, fontStyle: 'bold' });
   yPos += 10;
 
   const declaration = [
     'I hereby declare that:',
     '',
-    '• I have read and understood all the above-mentioned policies and guidelines.',
-    '• I agree to comply with all Company policies, procedures, and standards.',
-    '• I understand that violation of any policy may result in disciplinary action, including termination.',
-    '• All information provided by me in my employment application and documents is true and accurate.',
-    '• I authorize the Company to verify my credentials and background information.',
-    '• I have received and reviewed the Employee Handbook and related policy documents.'
+    '• I have read and understood all the company policies and guidelines provided in the ESME Company Policies document.',
+    '• I agree to comply with all Company policies, procedures, and standards during my employment.',
+    '• I understand that violation of any policy may result in disciplinary action, including termination of employment.',
+    '• All information provided by me in my employment application and documents is true and accurate to the best of my knowledge.',
+    '• I authorize the Company to verify my credentials and background information as required.',
+    '• I have received and reviewed the Employee Handbook and related policy documents provided during onboarding.'
   ];
 
   declaration.forEach(line => {
@@ -136,6 +128,7 @@ export const generatePolicyAcknowledgment = (candidateData) => {
   yPos += 15;
   checkPageBreak(40);
 
+  // Signature Section
   doc.line(margin, yPos, margin + 70, yPos);
   addText('Employee Signature', margin, yPos + 5, { fontSize: 9 });
   
@@ -149,6 +142,7 @@ export const generatePolicyAcknowledgment = (candidateData) => {
   yPos += 6;
   addText(`Employee Code: ${candidateData.profileData?.employeeCode || 'N/A'}`, margin, yPos, { fontSize: 9 });
 
+  // For Office Use Only Section
   yPos += 20;
   checkPageBreak(30);
   doc.setFillColor(245, 245, 245);
@@ -159,6 +153,7 @@ export const generatePolicyAcknowledgment = (candidateData) => {
   yPos += 8;
   addText('Date: _______________________', margin, yPos, { fontSize: 9 });
 
+  // Footer on all pages
   const pageCount = doc.internal.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);

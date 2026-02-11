@@ -204,38 +204,58 @@ const generatePFNominationPdf = (doc, data) => {
 const generatePolicyAcknowledgmentPdf = (doc, data) => {
   const pd = data.profileData || {};
   
-  doc.fontSize(16).text('POLICY ACKNOWLEDGMENT', { align: 'center' });
+  doc.fontSize(16).text('POLICY ACKNOWLEDGMENT & DECLARATION', { align: 'center' });
   doc.moveDown();
   doc.fontSize(12).text('ESME CONSUMER (P) LTD', { align: 'center' });
   doc.moveDown(2);
 
+  doc.fontSize(11).text('Employee Information', { underline: true });
+  doc.moveDown(0.5);
   doc.fontSize(10);
-  doc.text(`Employee Name: ${pd.fullName || data.name || ''}`);
-  doc.text(`Employee Code: ${pd.employeeCode || ''}`);
-  doc.text(`Department: ${pd.department || ''}`);
+  doc.text(`Name: ${pd.fullName || data.name || ''}`);
+  doc.text(`Employee Code: ${pd.employeeCode || 'N/A'}`);
+  doc.text(`Department: ${pd.department || pd.division || 'N/A'}`);
+  doc.text(`Designation: ${pd.designation || 'N/A'}`);
+  doc.text(`Date of Joining: ${pd.dateOfJoining || 'N/A'}`);
   doc.moveDown();
   
-  doc.text('I acknowledge that I have read and understood the following company policies:');
-  doc.moveDown();
+  doc.fontSize(11).text('POLICY ACKNOWLEDGMENT', { underline: true });
+  doc.moveDown(0.5);
+  doc.fontSize(10).text('I hereby acknowledge and confirm that:', { bold: true });
+  doc.moveDown(0.5);
   
-  const policies = [
-    'Code of Conduct & Professional Ethics',
-    'Confidentiality & Non-Disclosure',
-    'Information Security & Data Protection',
-    'Attendance, Leave & Working Hours',
-    'Workplace Safety & Health'
+  const acknowledgments = [
+    'I have received, accessed, and carefully read the complete "ESME Company Policies" document provided to me during the onboarding process.',
+    'I have had sufficient opportunity to review all company policies, procedures, and guidelines contained in the policies document.',
+    'I understand all the policies, rules, regulations, and expectations outlined in the company policies document.',
+    'I agree to comply with and abide by all policies, procedures, and guidelines set forth by ESME Consumer (P) Ltd.',
+    'I understand that violation of any company policy may result in disciplinary action, up to and including termination of employment.',
+    'I acknowledge that the company reserves the right to modify, amend, or update policies at any time, and I will be notified of any such changes.',
+    'I understand that my continued employment is contingent upon my compliance with all company policies and procedures.'
   ];
   
-  policies.forEach((policy, index) => {
-    doc.text(`${index + 1}. ${policy}`);
+  acknowledgments.forEach((ack, index) => {
+    doc.text(`${index + 1}. ${ack}`, { width: 500 });
+    doc.moveDown(0.3);
   });
   
-  doc.moveDown(2);
-  doc.text('I agree to abide by all company policies during my employment.');
-  doc.moveDown(2);
+  doc.moveDown();
+  doc.fontSize(11).text('DECLARATION', { underline: true });
+  doc.moveDown(0.5);
+  doc.fontSize(10);
+  doc.text('I hereby declare that:', { bold: true });
+  doc.moveDown(0.3);
+  doc.text('• I have read and understood all the company policies and guidelines provided in the ESME Company Policies document.');
+  doc.text('• I agree to comply with all Company policies, procedures, and standards during my employment.');
+  doc.text('• I understand that violation of any policy may result in disciplinary action, including termination of employment.');
+  doc.text('• All information provided by me in my employment application and documents is true and accurate to the best of my knowledge.');
   
-  doc.text(`Date: ${new Date().toLocaleDateString()}`);
+  doc.moveDown(2);
+  doc.text(`Date: ${new Date().toLocaleDateString('en-IN')}`);
   doc.text('Employee Signature: _____________________');
+  doc.moveDown();
+  doc.text(`Employee Name: ${pd.fullName || data.name || ''}`);
+  doc.text(`Employee Code: ${pd.employeeCode || 'N/A'}`);
 };
 
 const generateChecklistPdf = (doc, data) => {
