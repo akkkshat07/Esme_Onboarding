@@ -14,15 +14,18 @@ import {
   hasValidToken, 
   getAuthUrl, 
   handleAuthCallback, 
-  createCandidateFolder, 
+  createCandidateFolder,
+  createSubfolder, 
   uploadFileToDrive, 
   uploadOrReplacePdf,
   listFolderFiles,
+  downloadFileFromDrive,
   getDriveStatus 
 } from './services/googleDriveOAuth.js';
 import { isWhitelisted, refreshWhitelist, getWhitelistStats } from './services/candidateWhitelist.js';
 import { sendOtp, verifyOtp, resendOtp } from './services/msg91Otp.js';
 import { validateAadhaarNumber, storeAadhaarData, getAadhaarDetails } from './services/aadhaarVerification.js';
+import { generateAndUploadAllPdfs } from './services/generateAndUploadPdfs.js';
 
 dotenv.config();
 
@@ -217,15 +220,15 @@ app.post('/api/save-profile', async (req, res) => {
   try {
     const { email, ...profileData } = req.body;
     
-    // Find user first to get name for folder creation
     const existingUser = await User.findOne({ email });
     if (!existingUser) {
       return res.status(404).json({ message: 'User not found' });
     }
 
     let driveFolder = existingUser.driveFolder;
+    let uploadedSubfolderId = existingUser.driveFolder?.uploadedSubfolderId;
+    let generatedSubfolderId = existingUser.driveFolder?.generatedSubfolderId;
 
-    // Create Google Drive folder if connected and folder doesn't exist
     if (hasValidToken() && !driveFolder?.folderId) {
       try {
         const candidateName = profileData.fullName || existingUser.name;
@@ -234,19 +237,31 @@ app.post('/api/save-profile', async (req, res) => {
         
         driveFolder = await createCandidateFolder(candidateName, department, city);
         console.log(`📁 Created Google Drive folder for ${candidateName}: ${driveFolder.folderLink}`);
+        
+        const uploadedFolder = await createSubfolder(driveFolder.folderId, 'uploaded');
+        uploadedSubfolderId = uploadedFolder.folderId;
+        
+        console.log(`📁 Created 'uploaded' subfolder`);
       } catch (folderError) {
         console.error('⚠️ Could not create Drive folder:', folderError.message);
       }
     }
 
-    // Update user with profile data and folder info
+    const updateData = { 
+      profileData, 
+      status: 'completed',
+      ...(driveFolder && { 
+        driveFolder: {
+          ...driveFolder,
+          uploadedSubfolderId,
+          generatedSubfolderId
+        }
+      })
+    };
+
     const user = await User.findOneAndUpdate(
       { email },
-      { 
-        profileData, 
-        status: 'completed',
-        ...(driveFolder && { driveFolder })
-      },
+      updateData,
       { new: true }
     );
 
@@ -267,6 +282,10 @@ app.get('/api/candidates/:id/download-zip', async (req, res) => {
       return res.status(404).json({ message: 'Candidate not found' });
     }
 
+    if (!hasValidToken()) {
+      return res.status(503).json({ message: 'Google Drive not connected' });
+    }
+
     const candidateName = (candidate.profileData?.fullName || candidate.name).replace(/[^a-zA-Z0-9]/g, '_');
     const submissionDate = candidate.createdAt ? new Date(candidate.createdAt).toISOString().split('T')[0] : 'unknown';
     const zipFileName = `${candidateName}_${submissionDate}.zip`;
@@ -278,47 +297,50 @@ app.get('/api/candidates/:id/download-zip', async (req, res) => {
 
     archive.on('error', (err) => {
       console.error('Archive error:', err);
-      res.status(500).json({ message: 'Error creating ZIP file' });
+      if (!res.headersSent) {
+        res.status(500).json({ message: 'Error creating ZIP file' });
+      }
     });
 
     archive.pipe(res);
 
     if (candidate.documents && candidate.documents.length > 0) {
       for (const doc of candidate.documents) {
-        if (doc.localUrl && fs.existsSync(doc.localUrl)) {
-          const fileName = doc.fileName || path.basename(doc.localUrl);
-          archive.file(doc.localUrl, { name: `uploaded/${fileName}` });
+        if (doc.driveFileId) {
+          try {
+            const fileBuffer = await downloadFileFromDrive(doc.driveFileId);
+            archive.append(fileBuffer, { name: `uploaded/${doc.fileName}` });
+            console.log(`✅ Added uploaded file: ${doc.fileName}`);
+          } catch (error) {
+            console.error(`❌ Error downloading ${doc.fileName}:`, error.message);
+          }
         }
       }
     }
 
-    const generatedPdfPath = path.join(__dirname, 'temp_pdfs');
-    if (!fs.existsSync(generatedPdfPath)) {
-      fs.mkdirSync(generatedPdfPath, { recursive: true });
-    }
-
-    const generatedDocs = [
-      'Joining_Form.pdf',
-      'Medical_Insurance_Form.pdf',
-      'Self_Declaration.pdf',
-      'Form_11.pdf',
-      'Form_F.pdf',
-      'PF_Nomination.pdf',
-      'Checklist.pdf',
-      'Policy_Acknowledgment.pdf'
-    ];
-
-    generatedDocs.forEach(docName => {
-      const docPath = path.join(generatedPdfPath, `${candidate._id}_${docName}`);
-      if (fs.existsSync(docPath)) {
-        archive.file(docPath, { name: `generated/${docName}` });
+    if (candidate.generatedDocuments) {
+      const docKeys = ['joiningForm', 'medicalForm', 'selfDeclaration', 'form11', 'formF', 'pfNomination', 'policyAcknowledgment', 'checklist'];
+      
+      for (const key of docKeys) {
+        const doc = candidate.generatedDocuments[key];
+        if (doc?.fileId) {
+          try {
+            const fileBuffer = await downloadFileFromDrive(doc.fileId);
+            archive.append(fileBuffer, { name: `generated/${doc.fileName}` });
+            console.log(`✅ Added generated file: ${doc.fileName}`);
+          } catch (error) {
+            console.error(`❌ Error downloading ${doc.fileName}:`, error.message);
+          }
+        }
       }
-    });
+    }
 
     archive.finalize();
   } catch (err) {
     console.error('ZIP download error:', err);
-    res.status(500).json({ message: err.message });
+    if (!res.headersSent) {
+      res.status(500).json({ message: err.message });
+    }
   }
 });
 
@@ -671,6 +693,22 @@ app.post('/api/candidates', async (req, res) => {
       });
       await candidate.save();
       console.log('✅ Candidate saved to DB:', candidate._id, 'Status:', newStatus, 'Locked:', shouldLock);
+    }
+
+    if (shouldLock && hasValidToken()) {
+      try {
+        console.log('📄 Generating and uploading PDFs to Google Drive...');
+        const pdfResult = await generateAndUploadAllPdfs(candidate);
+        
+        await User.findByIdAndUpdate(candidate._id, {
+          'driveFolder.generatedSubfolderId': pdfResult.generatedSubfolderId,
+          'generatedDocuments': pdfResult.generatedDocuments
+        });
+        
+        console.log('✅ All PDFs generated and uploaded to Google Drive');
+      } catch (pdfError) {
+        console.error('❌ Error generating PDFs:', pdfError.message);
+      }
     }
 
     try {

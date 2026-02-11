@@ -17,7 +17,9 @@ const userSchema = new mongoose.Schema({
   driveFolder: {
     folderId: String,
     folderName: String,
-    folderLink: String
+    folderLink: String,
+    uploadedSubfolderId: String,
+    generatedSubfolderId: String
   },
   documents: [{
     type: { type: String },
@@ -28,7 +30,65 @@ const userSchema = new mongoose.Schema({
     driveDownloadLink: String,
     status: { type: String, enum: ['pending', 'verified', 'rejected'], default: 'pending' },
     uploadedAt: { type: Date, default: Date.now }
-  }]
+  }],
+  generatedDocuments: {
+    joiningForm: {
+      fileId: String,
+      fileName: String,
+      viewLink: String,
+      downloadLink: String,
+      generatedAt: Date
+    },
+    medicalForm: {
+      fileId: String,
+      fileName: String,
+      viewLink: String,
+      downloadLink: String,
+      generatedAt: Date
+    },
+    selfDeclaration: {
+      fileId: String,
+      fileName: String,
+      viewLink: String,
+      downloadLink: String,
+      generatedAt: Date
+    },
+    form11: {
+      fileId: String,
+      fileName: String,
+      viewLink: String,
+      downloadLink: String,
+      generatedAt: Date
+    },
+    formF: {
+      fileId: String,
+      fileName: String,
+      viewLink: String,
+      downloadLink: String,
+      generatedAt: Date
+    },
+    pfNomination: {
+      fileId: String,
+      fileName: String,
+      viewLink: String,
+      downloadLink: String,
+      generatedAt: Date
+    },
+    policyAcknowledgment: {
+      fileId: String,
+      fileName: String,
+      viewLink: String,
+      downloadLink: String,
+      generatedAt: Date
+    },
+    checklist: {
+      fileId: String,
+      fileName: String,
+      viewLink: String,
+      downloadLink: String,
+      generatedAt: Date
+    }
+  }
 }, { timestamps: true });
 
 

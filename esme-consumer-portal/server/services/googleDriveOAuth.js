@@ -317,16 +317,74 @@ export const getDriveStatus = async () => {
   }
 };
 
+export const createSubfolder = async (parentFolderId, subfolderName) => {
+  try {
+    const drive = await getDriveClient();
+
+    const existingFolders = await drive.files.list({
+      q: `name='${subfolderName}' and '${parentFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+      fields: 'files(id, name, webViewLink)'
+    });
+
+    if (existingFolders.data.files?.length > 0) {
+      console.log(`📁 Subfolder already exists: ${subfolderName}`);
+      return {
+        folderId: existingFolders.data.files[0].id,
+        folderName: subfolderName,
+        folderLink: existingFolders.data.files[0].webViewLink
+      };
+    }
+
+    const folder = await drive.files.create({
+      resource: {
+        name: subfolderName,
+        mimeType: 'application/vnd.google-apps.folder',
+        parents: [parentFolderId]
+      },
+      fields: 'id, name, webViewLink'
+    });
+
+    console.log(`✅ Created subfolder: ${subfolderName} (${folder.data.id})`);
+
+    return {
+      folderId: folder.data.id,
+      folderName: subfolderName,
+      folderLink: folder.data.webViewLink
+    };
+  } catch (error) {
+    console.error('❌ Error creating subfolder:', error.message);
+    throw error;
+  }
+};
+
+export const downloadFileFromDrive = async (fileId) => {
+  try {
+    const drive = await getDriveClient();
+    
+    const response = await drive.files.get(
+      { fileId, alt: 'media' },
+      { responseType: 'arraybuffer' }
+    );
+
+    return Buffer.from(response.data);
+  } catch (error) {
+    console.error('❌ Error downloading file from Drive:', error.message);
+    throw error;
+  }
+};
+
 export default {
   hasValidToken,
   getAuthUrl,
   handleAuthCallback,
   createCandidateFolder,
+  createSubfolder,
   uploadFileToDrive,
   uploadPdfBufferToDrive,
   uploadOrReplacePdf,
   deleteFileByName,
   listFolderFiles,
   deleteFileFromDrive,
+  downloadFileFromDrive,
   getDriveStatus
 };

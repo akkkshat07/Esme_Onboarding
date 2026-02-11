@@ -195,51 +195,51 @@ export default function CandidateDetailView({ candidate, onBack, onApprove, onRe
               <section>
                 <h3 className="text-sm font-bold text-gray-800 mb-4 pb-2 border-b-2 border-teal-500">Generated Documents</h3>
                 <div className="space-y-2">
-                  {candidate.generatedForms?.joiningForm && (
+                  {candidate.generatedDocuments?.joiningForm && (
                     <DocumentLink 
-                      href={candidate.generatedForms.joiningForm}
+                      href={candidate.generatedDocuments.joiningForm.viewLink}
                       label="Joining Form"
                       icon={FileText}
                     />
                   )}
-                  {candidate.generatedForms?.medicalForm && (
+                  {candidate.generatedDocuments?.medicalForm && (
                     <DocumentLink 
-                      href={candidate.generatedForms.medicalForm}
+                      href={candidate.generatedDocuments.medicalForm.viewLink}
                       label="Medical Form"
                       icon={FileText}
                     />
                   )}
-                  {candidate.generatedForms?.selfDeclaration && (
+                  {candidate.generatedDocuments?.selfDeclaration && (
                     <DocumentLink 
-                      href={candidate.generatedForms.selfDeclaration}
+                      href={candidate.generatedDocuments.selfDeclaration.viewLink}
                       label="Self Declaration"
                       icon={FileText}
                     />
                   )}
-                  {candidate.generatedForms?.form11 && (
+                  {candidate.generatedDocuments?.form11 && (
                     <DocumentLink 
-                      href={candidate.generatedForms.form11}
+                      href={candidate.generatedDocuments.form11.viewLink}
                       label="Form 11"
                       icon={FileText}
                     />
                   )}
-                  {candidate.generatedForms?.formF && (
+                  {candidate.generatedDocuments?.formF && (
                     <DocumentLink 
-                      href={candidate.generatedForms.formF}
+                      href={candidate.generatedDocuments.formF.viewLink}
                       label="Form F"
                       icon={FileText}
                     />
                   )}
-                  {candidate.generatedForms?.pfNomination && (
+                  {candidate.generatedDocuments?.pfNomination && (
                     <DocumentLink 
-                      href={candidate.generatedForms.pfNomination}
+                      href={candidate.generatedDocuments.pfNomination.viewLink}
                       label="PF Nomination"
                       icon={FileText}
                     />
                   )}
-                  {candidate.generatedForms?.checklist && (
+                  {candidate.generatedDocuments?.checklist && (
                     <DocumentLink 
-                      href={candidate.generatedForms.checklist}
+                      href={candidate.generatedDocuments.checklist.viewLink}
                       label="Document Checklist"
                       icon={FileText}
                     />
@@ -254,7 +254,7 @@ export default function CandidateDetailView({ candidate, onBack, onApprove, onRe
                     </div>
                     <Download className="w-3 h-3 text-purple-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
-                  {(!candidate.generatedForms || Object.keys(candidate.generatedForms).length === 0) && (
+                  {(!candidate.generatedDocuments || Object.keys(candidate.generatedDocuments).length === 0) && (
                     <p className="text-xs text-gray-500 italic py-3 text-center">No documents generated yet</p>
                   )}
                 </div>
