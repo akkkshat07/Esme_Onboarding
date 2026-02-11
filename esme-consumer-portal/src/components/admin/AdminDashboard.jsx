@@ -334,7 +334,7 @@ export default function AdminDashboard({ user, onLogout }) {
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-gray-800">Dashboard Overview</h2>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all-smooth hover:scale-105-smooth animate-slideUp">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500 font-medium">Total Candidates</p>
@@ -387,7 +387,7 @@ export default function AdminDashboard({ user, onLogout }) {
         <h2 className="text-xl font-bold text-gray-800">Candidates</h2>
         <button
           onClick={exportCandidatesToExcel}
-          className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors text-sm font-medium"
+          className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-all-smooth hover:scale-105-smooth text-sm font-medium"
         >
           <Download className="w-4 h-4" />
           Export Excel
@@ -399,7 +399,7 @@ export default function AdminDashboard({ user, onLogout }) {
           <input
             type="text"
             placeholder="Search candidates..."
-            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm transition-all-smooth"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
@@ -407,7 +407,7 @@ export default function AdminDashboard({ user, onLogout }) {
         <select
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm transition-all-smooth"
         >
           <option value="all">All Status</option>
           <option value="pending">Pending</option>
@@ -444,7 +444,7 @@ export default function AdminDashboard({ user, onLogout }) {
               </tr>
             ) : (
               filteredCandidates.map(candidate => (
-                <tr key={candidate._id} className="hover:bg-gray-50 transition-colors">
+                <tr key={candidate._id} className="hover:bg-gray-50 transition-all-smooth cursor-pointer">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -478,7 +478,7 @@ export default function AdminDashboard({ user, onLogout }) {
                   <td className="px-4 py-3 text-right">
                     <button
                       onClick={() => handleViewCandidate(candidate._id)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-teal-50 text-teal-700 rounded-lg hover:bg-teal-100 transition-colors text-xs font-medium"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-teal-50 text-teal-700 rounded-lg hover:bg-teal-100 transition-all-smooth hover:scale-105-smooth text-xs font-medium"
                     >
                       <FileText className="w-3 h-3" />
                       View Details
@@ -495,7 +495,7 @@ export default function AdminDashboard({ user, onLogout }) {
   const renderDashboard = () => (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all-smooth hover:scale-105-smooth animate-slideUp">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-gray-500 font-medium">Total Candidates</p>
@@ -506,7 +506,7 @@ export default function AdminDashboard({ user, onLogout }) {
             </div>
           </div>
         </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all-smooth hover:scale-105-smooth animate-slideUp" style={{animationDelay: '0.1s'}}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-gray-500 font-medium">Pending</p>
@@ -517,7 +517,7 @@ export default function AdminDashboard({ user, onLogout }) {
             </div>
           </div>
         </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all-smooth hover:scale-105-smooth animate-slideUp" style={{animationDelay: '0.2s'}}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-gray-500 font-medium">Approved</p>
@@ -528,7 +528,7 @@ export default function AdminDashboard({ user, onLogout }) {
             </div>
           </div>
         </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all-smooth hover:scale-105-smooth animate-slideUp" style={{animationDelay: '0.3s'}}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-gray-500 font-medium">Verified</p>
@@ -664,7 +664,7 @@ export default function AdminDashboard({ user, onLogout }) {
         <h2 className="text-2xl font-bold text-gray-800">Admin Management</h2>
         <button
           onClick={() => setShowCreateAdminModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-all text-sm font-medium"
+          className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-all-smooth hover:scale-105-smooth text-sm font-medium"
         >
           <Plus className="w-4 h-4" />
           Create New Admin
@@ -676,7 +676,7 @@ export default function AdminDashboard({ user, onLogout }) {
           <input
             type="text"
             placeholder="Search admins..."
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm transition-all-smooth"
             value={adminSearchTerm}
             onChange={e => setAdminSearchTerm(e.target.value)}
           />
@@ -712,7 +712,7 @@ export default function AdminDashboard({ user, onLogout }) {
                 </tr>
               ) : (
                 filteredAdmins.map(admin => (
-                  <tr key={admin._id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={admin._id} className="hover:bg-gray-50 transition-all-smooth">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
@@ -747,7 +747,7 @@ export default function AdminDashboard({ user, onLogout }) {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => openEditModal(admin)}
-                          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                          className="p-2 hover:bg-gray-100 rounded-lg transition-all-smooth hover:scale-110"
                           title="Edit admin"
                         >
                           <Pen className="w-4 h-4 text-gray-600" />
@@ -755,7 +755,7 @@ export default function AdminDashboard({ user, onLogout }) {
                         {admin._id !== user._id && (
                           <button
                             onClick={() => openDeleteConfirm(admin)}
-                            className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-2 hover:bg-red-50 rounded-lg transition-all-smooth hover:scale-110"
                             title="Delete admin"
                           >
                             <Trash2 className="w-4 h-4 text-red-600" />
@@ -808,10 +808,10 @@ export default function AdminDashboard({ user, onLogout }) {
               <button
                 key={item.id}
                 onClick={() => setActiveSection(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all-smooth ${
                   isActive
                     ? 'bg-teal-50 text-teal-700'
-                    : 'text-gray-600 hover:bg-gray-50'
+                    : 'text-gray-600 hover:bg-gray-50 hover:scale-105-smooth'
                 }`}
               >
                 <Icon className="w-5 h-5 flex-shrink-0" />
@@ -823,14 +823,14 @@ export default function AdminDashboard({ user, onLogout }) {
         <div className="p-4 border-t border-gray-200 space-y-2">
           <button
             onClick={() => setShowProfileSettings(true)}
-            className="w-full flex items-center gap-3 px-3 py-2.5 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-2.5 text-gray-600 hover:bg-gray-50 rounded-lg transition-all-smooth hover:scale-105-smooth"
           >
             <Settings className="w-5 h-5" />
             {sidebarOpen && <span className="text-sm font-medium">Settings</span>}
           </button>
           <button
             onClick={onLogout}
-            className="w-full flex items-center gap-3 px-3 py-2.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-2.5 text-red-600 hover:bg-red-50 rounded-lg transition-all-smooth hover:scale-105-smooth"
           >
             <LogOut className="w-5 h-5" />
             {sidebarOpen && <span className="text-sm font-medium">Logout</span>}
@@ -862,8 +862,8 @@ export default function AdminDashboard({ user, onLogout }) {
         </div>
       </main>
       {showCreateAdminModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-scaleIn">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-gray-800">Create New Admin</h3>
               <button
@@ -871,7 +871,7 @@ export default function AdminDashboard({ user, onLogout }) {
                   setShowCreateAdminModal(false);
                   setAdminForm({ name: '', email: '', password: '', role: 'admin' });
                 }}
-                className="p-1 hover:bg-gray-100 rounded"
+                className="p-1 hover:bg-gray-100 rounded transition-all-smooth"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -924,13 +924,13 @@ export default function AdminDashboard({ user, onLogout }) {
                     setShowCreateAdminModal(false);
                     setAdminForm({ name: '', email: '', password: '', role: 'admin' });
                   }}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all-smooth hover:scale-105-smooth text-sm font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleCreateAdmin}
-                  className="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors text-sm font-medium"
+                  className="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-all-smooth hover:scale-105-smooth text-sm font-medium"
                 >
                   Create Admin
                 </button>
@@ -940,8 +940,8 @@ export default function AdminDashboard({ user, onLogout }) {
         </div>
       )}
       {showEditAdminModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-scaleIn">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-gray-800">Edit Admin</h3>
               <button
@@ -994,13 +994,13 @@ export default function AdminDashboard({ user, onLogout }) {
                     setSelectedAdmin(null);
                     setAdminForm({ name: '', email: '', password: '', role: 'admin' });
                   }}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all-smooth hover:scale-105-smooth text-sm font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleUpdateAdmin}
-                  className="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors text-sm font-medium"
+                  className="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-all-smooth hover:scale-105-smooth text-sm font-medium"
                 >
                   Update Admin
                 </button>
@@ -1010,8 +1010,8 @@ export default function AdminDashboard({ user, onLogout }) {
         </div>
       )}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-scaleIn">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
                 <Trash2 className="w-6 h-6 text-red-600" />
@@ -1031,13 +1031,13 @@ export default function AdminDashboard({ user, onLogout }) {
                   setShowDeleteConfirm(false);
                   setSelectedAdmin(null);
                 }}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all-smooth hover:scale-105-smooth text-sm font-medium"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteAdmin}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all-smooth hover:scale-105-smooth text-sm font-medium"
               >
                 Delete Admin
               </button>
@@ -1046,8 +1046,8 @@ export default function AdminDashboard({ user, onLogout }) {
         </div>
       )}
       {showProfileSettings && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full my-8">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto animate-fadeIn">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full my-8 animate-scaleIn">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-xl flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
@@ -1066,7 +1066,7 @@ export default function AdminDashboard({ user, onLogout }) {
                   setProfileError('');
                   setProfileSuccess('');
                 }}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 rounded-lg transition-all-smooth"
               >
                 <X className="w-5 h-5 text-gray-500" />
               </button>
@@ -1139,7 +1139,7 @@ export default function AdminDashboard({ user, onLogout }) {
                   <button
                     type="submit"
                     disabled={updatingProfile}
-                    className="w-full px-4 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                    className="w-full px-4 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all-smooth hover:scale-105-smooth text-sm font-medium"
                   >
                     {updatingProfile ? 'Updating...' : 'Update Profile'}
                   </button>
@@ -1176,7 +1176,7 @@ export default function AdminDashboard({ user, onLogout }) {
                       <button
                         type="button"
                         onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded transition-colors"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded transition-all-smooth"
                       >
                         {showCurrentPassword ? <EyeOff className="w-4 h-4 text-gray-500" /> : <Eye className="w-4 h-4 text-gray-500" />}
                       </button>
@@ -1195,7 +1195,7 @@ export default function AdminDashboard({ user, onLogout }) {
                       <button
                         type="button"
                         onClick={() => setShowNewPassword(!showNewPassword)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded transition-colors"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded transition-all-smooth"
                       >
                         {showNewPassword ? <EyeOff className="w-4 h-4 text-gray-500" /> : <Eye className="w-4 h-4 text-gray-500" />}
                       </button>
@@ -1214,7 +1214,7 @@ export default function AdminDashboard({ user, onLogout }) {
                       <button
                         type="button"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded transition-colors"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded transition-all-smooth"
                       >
                         {showConfirmPassword ? <EyeOff className="w-4 h-4 text-gray-500" /> : <Eye className="w-4 h-4 text-gray-500" />}
                       </button>
@@ -1228,7 +1228,7 @@ export default function AdminDashboard({ user, onLogout }) {
                   <button
                     type="submit"
                     disabled={updatingPassword}
-                    className="w-full px-4 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                    className="w-full px-4 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all-smooth hover:scale-105-smooth text-sm font-medium"
                   >
                     {updatingPassword ? 'Changing...' : 'Change Password'}
                   </button>
