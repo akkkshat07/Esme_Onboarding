@@ -426,139 +426,54 @@ export default function AdminDashboard({ user, onLogout }) {
     </div>
   );
   const renderDashboard = () => (
-    <div className="space-y-8">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">Dashboard Overview</h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500 font-medium">Total Candidates</p>
-                <p className="text-3xl font-bold text-gray-800 mt-2">{stats.total}</p>
-              </div>
-              <div className="p-3 bg-blue-50 rounded-lg">
-                <Users className="w-6 h-6 text-blue-600" />
-              </div>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-500 font-medium">Total Candidates</p>
+              <p className="text-2xl font-bold text-gray-800 mt-1">{stats.total}</p>
+            </div>
+            <div className="p-2 bg-blue-50 rounded-lg">
+              <Users className="w-5 h-5 text-blue-600" />
             </div>
           </div>
-          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500 font-medium">Pending</p>
-                <p className="text-3xl font-bold text-amber-600 mt-2">{stats.pending}</p>
-              </div>
-              <div className="p-3 bg-amber-50 rounded-lg">
-                <Clock className="w-6 h-6 text-amber-600" />
-              </div>
+        </div>
+        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-500 font-medium">Pending</p>
+              <p className="text-2xl font-bold text-amber-600 mt-1">{stats.pending}</p>
+            </div>
+            <div className="p-2 bg-amber-50 rounded-lg">
+              <Clock className="w-5 h-5 text-amber-600" />
             </div>
           </div>
-          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500 font-medium">Completed</p>
-                <p className="text-3xl font-bold text-green-600 mt-2">{stats.completed}</p>
-              </div>
-              <div className="p-3 bg-green-50 rounded-lg">
-                <CheckCircle2 className="w-6 h-6 text-green-600" />
-              </div>
+        </div>
+        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-500 font-medium">Approved</p>
+              <p className="text-2xl font-bold text-green-600 mt-1">{stats.completed}</p>
+            </div>
+            <div className="p-2 bg-green-50 rounded-lg">
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
             </div>
           </div>
-          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500 font-medium">Verified</p>
-                <p className="text-3xl font-bold text-teal-600 mt-2">{stats.verified}</p>
-              </div>
-              <div className="p-3 bg-teal-50 rounded-lg">
-                <Shield className="w-6 h-6 text-teal-600" />
-              </div>
+        </div>
+        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-500 font-medium">Verified</p>
+              <p className="text-2xl font-bold text-teal-600 mt-1">{stats.verified}</p>
+            </div>
+            <div className="p-2 bg-teal-50 rounded-lg">
+              <Shield className="w-5 h-5 text-teal-600" />
             </div>
           </div>
         </div>
       </div>
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-800">All Candidates</h2>
-        </div>
-        <div className="flex gap-4 mb-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input
-              type="text"
-              placeholder="Search candidates..."
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-            />
-          </div>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Candidate</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Contact</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Registered</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {loading ? (
-                  <tr>
-                    <td colSpan="4" className="px-6 py-8 text-center text-gray-500">
-                      <div className="flex items-center justify-center gap-2">
-                        <div className="w-5 h-5 border-2 border-teal-600 border-t-transparent rounded-full animate-spin"></div>
-                        Loading candidates...
-                      </div>
-                    </td>
-                  </tr>
-                ) : filteredCandidates.length === 0 ? (
-                  <tr>
-                    <td colSpan="4" className="px-6 py-8 text-center text-gray-500">
-                      No candidates found
-                    </td>
-                  </tr>
-                ) : (
-                  filteredCandidates.map(candidate => (
-                    <tr key={candidate._id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
-                            <span className="text-teal-600 font-semibold text-sm">
-                              {candidate.name?.charAt(0).toUpperCase()}
-                            </span>
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-800">{candidate.name}</p>
-                            <p className="text-xs text-gray-500">{candidate.designation || 'N/A'}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="text-sm text-gray-800">{candidate.email}</p>
-                        <p className="text-xs text-gray-500">{candidate.mobile || 'N/A'}</p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          candidate.status === 'completed' ? 'bg-green-100 text-green-700' :
-                          candidate.status === 'pending' ? 'bg-amber-100 text-amber-700' :
-                          'bg-gray-100 text-gray-700'
-                        }`}>
-                          {candidate.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {new Date(candidate.createdAt).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+      {renderCandidates()}
     </div>
   );
   const handleCreateAdmin = async () => {
