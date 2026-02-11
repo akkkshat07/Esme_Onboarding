@@ -6,6 +6,7 @@ import {
   ChevronRight, MoreVertical, Trash2, Lock, Unlock, Plus, Pen, RotateCcw, AlertCircle
 } from 'lucide-react';
 import EsmeLogo from '../../assets/Esme-Logo-01.png';
+import CandidateDetailView from './CandidateDetailView';
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const SIDEBAR_MENU = [
   { id: 'dashboard', label: 'Dashboard', icon: Home },
@@ -19,6 +20,9 @@ export default function AdminDashboard({ user, onLogout }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [driveStatus, setDriveStatus] = useState({ connected: false, checking: true });
   const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedCandidateId, setSelectedCandidateId] = useState(null);
+  const [candidateDetails, setCandidateDetails] = useState(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [showProfileSettings, setShowProfileSettings] = useState(false);
   const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -159,6 +163,94 @@ export default function AdminDashboard({ user, onLogout }) {
       setUpdatingProfile(false);
     }
   };
+  const fetchCandidateDetails = async (candidateId) => {
+    try {
+      setLoadingDetails(true);
+      const res = await fetch(`${API_URL}/candidates/${candidateId}`);
+      const data = await res.json();
+      setCandidateDetails(data);
+    } catch (error) {
+      console.error('Error fetching candidate details:', error);
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+  const handleViewCandidate = (candidateId) => {
+    setSelectedCandidateId(candidateId);
+    fetchCandidateDetails(candidateId);
+  };
+  const handleApproveCandidate = async (candidateId, department, employeeId) => {
+    try {
+      const res = await fetch(`${API_URL}/candidates/${candidateId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          status: 'approved',
+          department,
+          employeeId,
+          approvedBy: user.email,
+          approvedAt: new Date()
+        })
+      });
+      if (res.ok) {
+        await fetchCandidates();
+        await fetchCandidateDetails(candidateId);
+        alert('Candidate approved successfully');
+      }
+    } catch (error) {
+      console.error('Error approving candidate:', error);
+      alert('Failed to approve candidate');
+    }
+  };
+  const handleRejectCandidate = async (candidateId, reason) => {
+    try {
+      const res = await fetch(`${API_URL}/candidates/${candidateId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          status: 'rejected',
+          rejectionReason: reason,
+          rejectedBy: user.email,
+          rejectedAt: new Date()
+        })
+      });
+      if (res.ok) {
+        await fetchCandidates();
+        await fetchCandidateDetails(candidateId);
+        alert('Candidate rejected');
+      }
+    } catch (error) {
+      console.error('Error rejecting candidate:', error);
+      alert('Failed to reject candidate');
+    }
+  };
+  const exportCandidatesToExcel = () => {
+    const headers = ['Name', 'Email', 'Mobile', 'Status', 'Department', 'Employee ID', 'DOB', 'PAN', 'Aadhaar', 'Bank Account', 'IFSC', 'Registered Date'];
+    const rows = filteredCandidates.map(c => [
+      c.name || '',
+      c.email || '',
+      c.mobile || '',
+      c.status || '',
+      c.department || '',
+      c.employeeId || '',
+      c.dob || '',
+      c.panNumber || '',
+      c.aadhaarNumber || '',
+      c.bankAccount || '',
+      c.ifscCode || '',
+      c.createdAt ? new Date(c.createdAt).toLocaleDateString() : ''
+    ]);
+    let csv = headers.join(',') + '\n';
+    rows.forEach(row => {
+      csv += row.map(cell => `"${cell}"`).join(',') + '\n';
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `candidates_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+  };
   const filteredCandidates = candidates.filter(c => {
     const matchesSearch = c.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          c.email?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -223,87 +315,113 @@ export default function AdminDashboard({ user, onLogout }) {
     </div>
   );
   const renderCandidates = () => (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-800">Candidate Management</h2>
+        <h2 className="text-xl font-bold text-gray-800">Candidates</h2>
+        <button
+          onClick={exportCandidatesToExcel}
+          className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors text-sm font-medium"
+        >
+          <Download className="w-4 h-4" />
+          Export Excel
+        </button>
       </div>
-      <div className="flex gap-4">
+      <div className="flex gap-3">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
             type="text"
             placeholder="Search candidates..."
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
         </div>
+        <select
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value)}
+          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+        >
+          <option value="all">All Status</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+        </select>
       </div>
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Candidate</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Contact</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Date</th>
+              <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {loading ? (
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Candidate</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Contact</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Registered</th>
+                <td colSpan="5" className="px-4 py-8 text-center text-gray-500">
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-teal-600 border-t-transparent rounded-full animate-spin"></div>
+                    Loading...
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {loading ? (
-                <tr>
-                  <td colSpan="4" className="px-6 py-8 text-center text-gray-500">
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="w-5 h-5 border-2 border-teal-600 border-t-transparent rounded-full animate-spin"></div>
-                      Loading candidates...
+            ) : filteredCandidates.length === 0 ? (
+              <tr>
+                <td colSpan="5" className="px-4 py-8 text-center text-gray-500 text-sm">
+                  No candidates found
+                </td>
+              </tr>
+            ) : (
+              filteredCandidates.map(candidate => (
+                <tr key={candidate._id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-teal-600 font-semibold text-xs">
+                          {candidate.name?.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-800 text-sm truncate">{candidate.name}</p>
+                        <p className="text-xs text-gray-500 truncate">{candidate.designation || 'N/A'}</p>
+                      </div>
                     </div>
                   </td>
-                </tr>
-              ) : filteredCandidates.length === 0 ? (
-                <tr>
-                  <td colSpan="4" className="px-6 py-8 text-center text-gray-500">
-                    No candidates found
+                  <td className="px-4 py-3">
+                    <p className="text-sm text-gray-800 truncate">{candidate.email}</p>
+                    <p className="text-xs text-gray-500">{candidate.mobile || 'N/A'}</p>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                      candidate.status === 'approved' ? 'bg-green-100 text-green-700' :
+                      candidate.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                      candidate.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                      'bg-gray-100 text-gray-700'
+                    }`}>
+                      {candidate.status || 'pending'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-600">
+                    {new Date(candidate.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      onClick={() => handleViewCandidate(candidate._id)}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-teal-50 text-teal-700 rounded-lg hover:bg-teal-100 transition-colors text-xs font-medium"
+                    >
+                      <FileText className="w-3 h-3" />
+                      View Details
+                    </button>
                   </td>
                 </tr>
-              ) : (
-                filteredCandidates.map(candidate => (
-                  <tr key={candidate._id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
-                          <span className="text-teal-600 font-semibold text-sm">
-                            {candidate.name?.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-800">{candidate.name}</p>
-                          <p className="text-xs text-gray-500">{candidate.designation || 'N/A'}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-gray-800">{candidate.email}</p>
-                      <p className="text-xs text-gray-500">{candidate.mobile || 'N/A'}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        candidate.status === 'completed' ? 'bg-green-100 text-green-700' :
-                        candidate.status === 'pending' ? 'bg-amber-100 text-amber-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>
-                        {candidate.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
-                      {new Date(candidate.createdAt).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
@@ -737,10 +855,28 @@ export default function AdminDashboard({ user, onLogout }) {
           </button>
         </div>
       </aside>
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto py-8 px-6">
-          {activeSection === 'dashboard' && renderDashboard()}
-          {activeSection === 'admins' && renderAdminManagement()}
+      <main className="flex-1 overflow-y-auto bg-gray-50">
+        <div className="max-w-7xl mx-auto py-6 px-6">
+          {selectedCandidateId ? (
+            loadingDetails ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-8 h-8 border-4 border-teal-600 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            ) : (
+              <CandidateDetailView 
+                candidate={candidateDetails}
+                onBack={() => setSelectedCandidateId(null)}
+                onApprove={handleApproveCandidate}
+                onReject={handleRejectCandidate}
+                onRefresh={() => fetchCandidateDetails(selectedCandidateId)}
+              />
+            )
+          ) : (
+            <>
+              {activeSection === 'dashboard' && renderDashboard()}
+              {activeSection === 'admins' && renderAdminManagement()}
+            </>
+          )}
         </div>
       </main>
       {showCreateAdminModal && (

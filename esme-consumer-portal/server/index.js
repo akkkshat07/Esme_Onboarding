@@ -487,7 +487,7 @@ app.get('/api/candidates/:id', async (req, res) => {
 
 app.patch('/api/candidates/:id/status', async (req, res) => {
   try {
-    const { status, department, employeeId, hrRemarks, designation } = req.body;
+    const { status, department, employeeId, hrRemarks, designation, rejectionReason, approvedBy, rejectedBy, approvedAt, rejectedAt } = req.body;
     
 
     const updateData = { status };
@@ -495,6 +495,7 @@ app.patch('/api/candidates/:id/status', async (req, res) => {
 
     if (department) {
       updateData['profileData.department'] = department;
+      updateData.department = department;
     }
     
 
@@ -515,8 +516,16 @@ app.patch('/api/candidates/:id/status', async (req, res) => {
     
 
     if (status === 'approved') {
-      updateData.approvedAt = new Date();
+      updateData.approvedAt = approvedAt || new Date();
       updateData.hrVerified = true;
+      if (approvedBy) updateData.approvedBy = approvedBy;
+    }
+    
+
+    if (status === 'rejected') {
+      updateData.rejectedAt = rejectedAt || new Date();
+      if (rejectedBy) updateData.rejectedBy = rejectedBy;
+      if (rejectionReason) updateData.rejectionReason = rejectionReason;
     }
     
     const candidate = await User.findByIdAndUpdate(
