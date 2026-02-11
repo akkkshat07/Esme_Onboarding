@@ -72,7 +72,6 @@ export default function CandidateDashboard({ user, onLogout }) {
     emergencyContactAddress: '',
     isFresher: false,
     totalExperience: '',
-    preferredLocation: '',
     sourceOfHire: '',
     designation: '',
     offeredSalary: '',
@@ -871,15 +870,6 @@ export default function CandidateDashboard({ user, onLogout }) {
               onChange={(e) => setJoiningFormData({ ...joiningFormData, totalExperience: e.target.value })}
               className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-teal-500 text-xs"
               placeholder="e.g., 3 years"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Preferred Location</label>
-            <input
-              type="text"
-              value={joiningFormData.preferredLocation}
-              onChange={(e) => setJoiningFormData({ ...joiningFormData, preferredLocation: e.target.value })}
-              className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-teal-500 text-xs"
             />
           </div>
           <div>
