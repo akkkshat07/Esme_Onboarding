@@ -150,7 +150,7 @@ export const listFolderFiles = async (folderId) => {
 export const deleteFileFromDrive = async (fileId) => {
   try {
     const drive = getDriveClient();
-    await drive.files.delete({ fileId });
+    await drive.files.delete({ fileId, supportsAllDrives: true });
     console.log(`🗑️ Deleted file: ${fileId}`);
     return true;
   } catch (error) {
@@ -159,9 +159,162 @@ export const deleteFileFromDrive = async (fileId) => {
   }
 };
 
+
+export const createSubfolder = async (parentFolderId, folderName) => {
+  try {
+    const drive = getDriveClient();
+    
+    const existingFolders = await drive.files.list({
+      q: `name='${folderName}' and '${parentFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+      fields: 'files(id, name)',
+      supportsAllDrives: true,
+      includeItemsFromAllDrives: true
+    });
+
+    if (existingFolders.data.files?.length > 0) {
+      console.log(`📁 Subfolder already exists: ${folderName}`);
+      return existingFolders.data.files[0].id;
+    }
+
+    const folderMetadata = {
+      name: folderName,
+      mimeType: 'application/vnd.google-apps.folder',
+      parents: [parentFolderId]
+    };
+
+    const folder = await drive.files.create({
+      resource: folderMetadata,
+      fields: 'id, name',
+      supportsAllDrives: true
+    });
+
+    console.log(`✅ Created subfolder: ${folderName} (${folder.data.id})`);
+    return folder.data.id;
+  } catch (error) {
+    console.error('❌ Error creating subfolder:', error.message);
+    throw error;
+  }
+};
+
+
+export const uploadOrReplacePdf = async (folderId, pdfPath, pdfName) => {
+  try {
+    const drive = getDriveClient();
+    
+    // Check if file already exists
+    const existingFiles = await drive.files.list({
+      q: `name='${pdfName}' and '${folderId}' in parents and trashed=false`,
+      fields: 'files(id, name)',
+      supportsAllDrives: true,
+      includeItemsFromAllDrives: true
+    });
+
+    if (existingFiles.data.files?.length > 0) {
+      // Replace existing file
+      const fileId = existingFiles.data.files[0].id;
+      
+      const media = {
+        mimeType: 'application/pdf',
+        body: fs.createReadStream(pdfPath)
+      };
+
+      await drive.files.update({
+        fileId: fileId,
+        media: media,
+        supportsAllDrives: true
+      });
+
+      console.log(`🔄 Replaced existing PDF: ${pdfName}`);
+      return fileId;
+    } else {
+      // Upload new file
+      const result = await uploadFileToDrive(folderId, pdfPath, pdfName, 'application/pdf');
+      return result.fileId;
+    }
+  } catch (error) {
+    console.error('❌ Error uploading/replacing PDF:', error.message);
+    throw error;
+  }
+};
+
+
+export const downloadFileFromDrive = async (fileId) => {
+  try {
+    const drive = getDriveClient();
+    
+    const response = await drive.files.get(
+      { fileId, alt: 'media', supportsAllDrives: true },
+      { responseType: 'stream' }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error('❌ Error downloading file from Drive:', error.message);
+    throw error;
+  }
+};
+
+
+export const getDriveStatus = async () => {
+  try {
+    const projectId = process.env.GOOGLE_PROJECT_ID;
+    const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
+    const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+    const parentFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
+
+    if (!projectId || !clientEmail || !privateKey) {
+      return {
+        connected: false,
+        message: 'Service Account credentials not configured. Please set GOOGLE_PROJECT_ID, GOOGLE_CLIENT_EMAIL, and GOOGLE_PRIVATE_KEY in .env'
+      };
+    }
+
+    if (!parentFolderId) {
+      return {
+        connected: false,
+        message: 'GOOGLE_DRIVE_FOLDER_ID not configured'
+      };
+    }
+
+    // Test the connection
+    const drive = getDriveClient();
+    await drive.files.get({
+      fileId: parentFolderId,
+      fields: 'id, name',
+      supportsAllDrives: true
+    });
+
+    return {
+      connected: true,
+      message: 'Service Account connected successfully',
+      serviceAccount: clientEmail
+    };
+  } catch (error) {
+    return {
+      connected: false,
+      message: `Service Account error: ${error.message}`
+    };
+  }
+};
+
+
+export const hasValidToken = () => {
+  // For Service Account, check if credentials are present
+  const projectId = process.env.GOOGLE_PROJECT_ID;
+  const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
+  const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+  
+  return !!(projectId && clientEmail && privateKey);
+};
+
 export default {
   createCandidateFolder,
   uploadFileToDrive,
   listFolderFiles,
-  deleteFileFromDrive
+  deleteFileFromDrive,
+  createSubfolder,
+  uploadOrReplacePdf,
+  downloadFileFromDrive,
+  getDriveStatus,
+  hasValidToken
 };

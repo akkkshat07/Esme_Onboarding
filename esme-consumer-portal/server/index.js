@@ -12,8 +12,6 @@ import { appendToSheet } from './services/googleSheets.js';
 import { appendToSheet as appendToGoogleSheet, updateSheetStatus } from './services/bgvGoogleSheets.js';
 import { 
   hasValidToken, 
-  getAuthUrl, 
-  handleAuthCallback, 
   createCandidateFolder,
   createSubfolder, 
   uploadFileToDrive, 
@@ -21,7 +19,7 @@ import {
   listFolderFiles,
   downloadFileFromDrive,
   getDriveStatus 
-} from './services/googleDriveOAuth.js';
+} from './services/googleDrive.js';
 import { isWhitelisted, refreshWhitelist, getWhitelistStats } from './services/candidateWhitelist.js';
 import { sendOtp, verifyOtp, resendOtp } from './services/msg91Otp.js';
 import { validateAadhaarNumber, storeAadhaarData, getAadhaarDetails } from './services/aadhaarVerification.js';
@@ -860,9 +858,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
 
-
-
-
+// Google Drive Status endpoint (Service Account)
 app.get('/api/auth/google/status', async (req, res) => {
   try {
     const status = await getDriveStatus();
@@ -872,69 +868,14 @@ app.get('/api/auth/google/status', async (req, res) => {
   }
 });
 
-
-app.get('/api/auth/google', (req, res) => {
-  try {
-    const authUrl = getAuthUrl();
-    res.json({ authUrl });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-
-app.get('/api/auth/google/callback', async (req, res) => {
-  try {
-    const { code } = req.query;
-    if (!code) {
-      return res.status(400).send('Authorization code not provided');
-    }
-    
-    await handleAuthCallback(code);
-    
-
-    res.send(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Google Drive Connected</title>
-          <style>
-            body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f9ff; }
-            .container { text-align: center; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-            h1 { color: #16a34a; }
-            p { color: #666; }
-            .btn { background: #2563eb; color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; text-decoration: none; display: inline-block; margin-top: 20px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1>✅ Google Drive Connected!</h1>
-            <p>Your Google Drive has been successfully connected.</p>
-            <p>File uploads will now be stored in your Drive.</p>
-            <a href="/" class="btn">Go to Dashboard</a>
-          </div>
-        </body>
-      </html>
-    `);
-  } catch (error) {
-    res.status(500).send(`
-      <!DOCTYPE html>
-      <html>
-        <head><title>Error</title></head>
-        <body style="font-family: Arial; text-align: center; padding: 50px;">
-          <h1 style="color: red;">❌ Connection Failed</h1>
-          <p>${error.message}</p>
-          <a href="/">Go back</a>
-        </body>
-      </html>
-    `);
-  }
-});
+// Service Account doesn't need OAuth endpoints
+// No browser login required - credentials are in .env file
 
 
 
-
-
+// ============================================
+// Admin Management Endpoints
+// ============================================
 
 app.get('/api/admin/admins', async (req, res) => {
   try {
