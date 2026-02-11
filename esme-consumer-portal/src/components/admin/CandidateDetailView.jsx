@@ -32,21 +32,30 @@ export default function CandidateDetailView({ candidate, onBack, onApprove, onRe
       const response = await fetch(`${API_URL}/candidates/${candidate._id}/download-zip`);
       
       if (!response.ok) {
-        throw new Error('Failed to download ZIP');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to download ZIP');
       }
 
       const blob = await response.blob();
+      
+      // Check if blob is empty
+      if (blob.size === 0) {
+        throw new Error('ZIP file is empty');
+      }
+      
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       const candidateName = (candidate.profileData?.fullName || candidate.name).replace(/[^a-zA-Z0-9]/g, '_');
       const submissionDate = candidate.createdAt ? new Date(candidate.createdAt).toISOString().split('T')[0] : 'unknown';
       a.download = `${candidateName}_${submissionDate}.zip`;
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error downloading ZIP:', error);
-      alert('Failed to download ZIP file');
+      alert(`Failed to download ZIP file: ${error.message}`);
     } finally {
       setDownloadingZip(false);
     }

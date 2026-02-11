@@ -283,7 +283,7 @@ app.get('/api/candidates/:id/download-zip', async (req, res) => {
     }
 
     if (!hasValidToken()) {
-      return res.status(503).json({ message: 'Google Drive not connected' });
+      return res.status(503).json({ message: 'Google Drive not connected. Please reconnect Google Drive in settings.' });
     }
 
     const candidateName = (candidate.profileData?.fullName || candidate.name).replace(/[^a-zA-Z0-9]/g, '_');
@@ -294,32 +294,40 @@ app.get('/api/candidates/:id/download-zip', async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="${zipFileName}"`);
 
     const archive = archiver('zip', { zlib: { level: 9 } });
+    let filesAdded = 0;
 
     archive.on('error', (err) => {
       console.error('Archive error:', err);
       if (!res.headersSent) {
-        res.status(500).json({ message: 'Error creating ZIP file' });
+        res.status(500).json({ message: 'Error creating ZIP file: ' + err.message });
       }
     });
 
     archive.pipe(res);
 
+    // Add uploaded files
     if (candidate.documents && candidate.documents.length > 0) {
+      console.log(`📦 Processing ${candidate.documents.length} uploaded files...`);
       for (const doc of candidate.documents) {
         if (doc.driveFileId) {
           try {
             const fileBuffer = await downloadFileFromDrive(doc.driveFileId);
             archive.append(fileBuffer, { name: `uploaded/${doc.fileName}` });
+            filesAdded++;
             console.log(`✅ Added uploaded file: ${doc.fileName}`);
           } catch (error) {
             console.error(`❌ Error downloading ${doc.fileName}:`, error.message);
           }
         }
       }
+    } else {
+      console.log('⚠️  No uploaded documents found');
     }
 
+    // Add generated files
     if (candidate.generatedDocuments) {
       const docKeys = ['joiningForm', 'medicalForm', 'selfDeclaration', 'form11', 'formF', 'pfNomination', 'policyAcknowledgment', 'checklist'];
+      console.log(`📦 Processing generated documents...`);
       
       for (const key of docKeys) {
         const doc = candidate.generatedDocuments[key];
@@ -327,19 +335,32 @@ app.get('/api/candidates/:id/download-zip', async (req, res) => {
           try {
             const fileBuffer = await downloadFileFromDrive(doc.fileId);
             archive.append(fileBuffer, { name: `generated/${doc.fileName}` });
+            filesAdded++;
             console.log(`✅ Added generated file: ${doc.fileName}`);
           } catch (error) {
             console.error(`❌ Error downloading ${doc.fileName}:`, error.message);
           }
         }
       }
+    } else {
+      console.log('⚠️  No generated documents found');
+    }
+
+    if (filesAdded === 0) {
+      console.error('❌ No files were added to ZIP');
+      archive.abort();
+      if (!res.headersSent) {
+        return res.status(404).json({ message: 'No documents found for this candidate' });
+      }
+    } else {
+      console.log(`✅ Total files added to ZIP: ${filesAdded}`);
     }
 
     archive.finalize();
   } catch (err) {
     console.error('ZIP download error:', err);
     if (!res.headersSent) {
-      res.status(500).json({ message: err.message });
+      res.status(500).json({ message: 'Error creating ZIP file: ' + err.message });
     }
   }
 });
