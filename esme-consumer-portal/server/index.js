@@ -598,6 +598,19 @@ app.get('/api/candidates/:id', async (req, res) => {
   }
 });
 
+app.patch('/api/candidates/:id/profile', async (req, res) => {
+  try {
+    const { profileData } = req.body;
+    const candidate = await User.findByIdAndUpdate(
+      req.params.id,
+      { $set: { profileData } },
+      { new: true }
+    );
+    res.json(candidate);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
 app.patch('/api/candidates/:id/status', async (req, res) => {
   try {

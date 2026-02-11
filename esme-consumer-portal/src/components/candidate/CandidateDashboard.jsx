@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Menu, X, ShieldCheck, FileText, LogOut, CheckCircle2, Clock, ChevronDown, ChevronRight, Upload, Plus, Trash2, CreditCard, Building, BookOpen, Award, FileCheck, Heart, User, Key, Eye, EyeOff, Download, FileImage, Mail, ClipboardCheck, BookMarked } from 'lucide-react';
 import EsmeLogo from '../../assets/Esme-Logo-01.png';
 import { generatePolicyAcknowledgment } from '../../utils/generatePolicyAcknowledgment';
@@ -256,6 +256,97 @@ export default function CandidateDashboard({ user, onLogout }) {
     selfDeclaration: false
   });
   const [policyAcknowledged, setPolicyAcknowledged] = useState(false);
+
+  const saveTimeoutRef = useRef(null);
+
+  const saveProfileData = useCallback(async (data) => {
+    try {
+      await fetch(`${API_URL}/candidates/${user._id}/profile`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profileData: data })
+      });
+    } catch (error) {
+      console.error('Auto-save failed:', error);
+    }
+  }, [user._id]);
+
+  const debouncedSave = useCallback((data) => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    saveTimeoutRef.current = setTimeout(() => {
+      saveProfileData(data);
+    }, 500);
+  }, [saveProfileData]);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch(`${API_URL}/candidates/${user._id}`);
+        const data = await response.json();
+        if (data.profileData) {
+          const pd = data.profileData;
+          if (pd.joiningFormData) setJoiningFormData(prev => ({ ...prev, ...pd.joiningFormData }));
+          if (pd.educationDetails) setEducationDetails(pd.educationDetails);
+          if (pd.experienceDetails) setExperienceDetails(pd.experienceDetails);
+          if (pd.form11Data) setForm11Data(prev => ({ ...prev, ...pd.form11Data }));
+          if (pd.familyMembers) setFamilyMembers(pd.familyMembers);
+          if (pd.epfNominees) setEpfNominees(pd.epfNominees);
+          if (pd.epsNominees) setEpsNominees(pd.epsNominees);
+          if (pd.formFData) setFormFData(prev => ({ ...prev, ...pd.formFData }));
+          if (pd.formFNominees) setFormFNominees(pd.formFNominees);
+          if (pd.formFWitnesses) setFormFWitnesses(pd.formFWitnesses);
+          if (pd.form2Data) setForm2Data(prev => ({ ...prev, ...pd.form2Data }));
+          if (pd.form2EPFNominees) setForm2EPFNominees(pd.form2EPFNominees);
+          if (pd.form2FamilyMembers) setForm2FamilyMembers(pd.form2FamilyMembers);
+          if (pd.form2EPSNominee) setForm2EPSNominee(pd.form2EPSNominee);
+          if (pd.form2EmployerCert) setForm2EmployerCert(pd.form2EmployerCert);
+          if (pd.medicalInsuranceData) setMedicalInsuranceData(prev => ({ ...prev, ...pd.medicalInsuranceData }));
+          if (pd.childrenDetails) setChildrenDetails(pd.childrenDetails);
+          if (pd.selfDeclarationData) setSelfDeclarationData(prev => ({ ...prev, ...pd.selfDeclarationData }));
+          if (pd.policyAcknowledged !== undefined) setPolicyAcknowledged(pd.policyAcknowledged);
+        }
+      } catch (error) {
+        console.error('Failed to fetch user data:', error);
+      }
+    };
+    fetchUserData();
+  }, [user._id]);
+
+  useEffect(() => {
+    const allData = {
+      joiningFormData,
+      educationDetails,
+      experienceDetails,
+      form11Data,
+      familyMembers,
+      epfNominees,
+      epsNominees,
+      formFData,
+      formFNominees,
+      formFWitnesses,
+      form2Data,
+      form2EPFNominees,
+      form2FamilyMembers,
+      form2EPSNominee,
+      form2EmployerCert,
+      medicalInsuranceData,
+      childrenDetails,
+      selfDeclarationData,
+      policyAcknowledged
+    };
+    debouncedSave(allData);
+  }, [joiningFormData, educationDetails, experienceDetails, form11Data, familyMembers, epfNominees, epsNominees, formFData, formFNominees, formFWitnesses, form2Data, form2EPFNominees, form2FamilyMembers, form2EPSNominee, form2EmployerCert, medicalInsuranceData, childrenDetails, selfDeclarationData, policyAcknowledged, debouncedSave]);
+
   useEffect(() => {
     if (joiningFormData.firstName || joiningFormData.lastName || joiningFormData.dob) {
       setForm11Data(prev => ({
