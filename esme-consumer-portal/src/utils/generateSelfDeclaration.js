@@ -1,6 +1,7 @@
-import { uploadPdfToDrive } from './driveUpload';
+import { ESME_LOGO_BASE64 } from '../constants/esmeLogoBase64.js';
+
 export const generateSelfDeclarationFormPDF = async (candidate) => {
-  const jsPDF = (await import('jspdf')).default;
+  const { jsPDF } = await import('jspdf');
   const doc = new jsPDF('p', 'mm', 'a4');
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -33,16 +34,25 @@ export const generateSelfDeclarationFormPDF = async (candidate) => {
       yPosition = 10;
     }
   };
-  doc.setFontSize(18);
-  doc.setTextColor(20, 40, 80);
-  doc.setFont(undefined, 'bold');
-  doc.text('SELF DECLARATION FORM', pageWidth / 2, yPosition, { align: 'center' });
-  yPosition += 6;
-  doc.setFontSize(9);
-  doc.setTextColor(80, 100, 120);
-  doc.setFont(undefined, 'normal');
-  doc.text('Esme Consumer (P) Ltd.', pageWidth / 2, yPosition, { align: 'center' });
-  yPosition += 10;
+
+  // --- Header with REAL Logo ---
+  const logoY = 12;
+  try {
+    doc.addImage(ESME_LOGO_BASE64, 'PNG', margin, logoY, 40, 15, undefined, 'FAST');
+  } catch (e) { }
+
+  // Title
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor(30, 41, 59);
+  doc.text('SELF DECLARATION FORM', pageWidth - margin, logoY + 10, { align: 'right' });
+
+  // Line
+  doc.setDrawColor(0, 128, 128);
+  doc.setLineWidth(0.5);
+  doc.line(margin, logoY + 18, pageWidth - margin, logoY + 18);
+
+  yPosition = 35;
   addSectionTitle('PERSONAL INFORMATION');
   checkPageBreak(20);
   doc.setFontSize(9);
@@ -59,7 +69,7 @@ export const generateSelfDeclarationFormPDF = async (candidate) => {
   doc.text('Date of Birth:', margin, yPosition);
   doc.setFont(undefined, 'normal');
   doc.setTextColor(20, 30, 50);
-  doc.text(candidate.profileData?.dob || '__________________________________________', margin + 35, yPosition);
+  doc.text(candidate.profileData?.dob || candidate.profileData?.dateOfBirth || candidate.dob || candidate.dateOfBirth || '__________________________________________', margin + 35, yPosition);
   yPosition += 7;
   doc.setTextColor(60, 80, 100);
   doc.setFont(undefined, 'bold');
@@ -73,32 +83,42 @@ export const generateSelfDeclarationFormPDF = async (candidate) => {
   doc.text('Mobile:', margin, yPosition);
   doc.setFont(undefined, 'normal');
   doc.setTextColor(20, 30, 50);
-  doc.text(candidate.mobile || '__________________________________________', margin + 35, yPosition);
+  doc.text(candidate.mobile || candidate.mobileNumber || candidate.phone || candidate.profileData?.mobile || '__________________________________________', margin + 35, yPosition);
   yPosition += 10;
   addSectionTitle('DECLARATIONS');
   yPosition += 2;
-  addDeclaration('1', 'I declare that the information provided in this form is true and correct to the best of my knowledge and belief.');
-  addDeclaration('2', 'I hereby declare that I have disclosed all material facts relating to my past medical history, if any.');
-  addDeclaration('3', 'I declare that I am not suffering from any communicable disease and have not been treated for any serious illness in the past.');
-  addDeclaration('4', 'I hereby declare that I am not addicted to alcohol, drugs, or any controlled substance.');
-  addDeclaration('5', 'I declare that all documents submitted by me are genuine and have not been forged or altered in any manner.');
-  addDeclaration('6', 'I acknowledge that any false declaration made in this form may result in disciplinary action or termination of employment.');
-  addDeclaration('7', 'I declare that I have read and understood all the terms and conditions of employment with Esme Consumer (P) Ltd.');
-  checkPageBreak(30);
-  yPosition += 5;
+  // Consolidated Declaration Paragraph
+  const candidateName = candidate.name || 'Candidate';
+  const declarationText = `I, ${candidateName}, hereby declare that the information provided in this Self Declaration Form, as well as in Form F, Form 11, PF Form, Employee Joining Form, Medical Insurance Form, and Policy Acknowledgment, is true and correct to the best of my knowledge and belief. I have disclosed all material facts relating to my past medical history, if any, and declare that I am not suffering from any communicable disease nor have I been treated for any serious illness in the past. I further declare that I am not addicted to alcohol, drugs, or any controlled substance. I confirm that all documents submitted by me are genuine and have not been forged or altered in any manner. I acknowledge that any false declaration made in any of these forms may result in disciplinary action or termination of employment. I have read and understood all the terms and conditions of employment with Esme Consumer (P) Ltd.`;
+
+  checkPageBreak(40);
   doc.setFontSize(9);
   doc.setTextColor(20, 30, 50);
-  doc.setFont(undefined, 'bold');
-  doc.text('Employee Acknowledgment:', margin, yPosition);
-  yPosition += 8;
-  doc.setFontSize(8);
   doc.setFont(undefined, 'normal');
-  const ackText = 'I hereby acknowledge that I have read, understood, and agree to the terms and conditions mentioned in this Self Declaration Form. I take full responsibility for the accuracy and truthfulness of the information provided herein.';
-  const wrappedText = doc.splitTextToSize(ackText, pageWidth - 2 * margin - 5);
-  doc.text(wrappedText, margin, yPosition);
-  yPosition += wrappedText.length * 3.5 + 6;
+  const wrappedDecl = doc.splitTextToSize(declarationText, pageWidth - 2 * margin - 5);
+  doc.text(wrappedDecl, margin, yPosition);
+  yPosition += wrappedDecl.length * 4 + 8;
   checkPageBreak(15);
+
+  // Ensure enough space for signature image above
+  if (yPosition < 40) yPosition = 40;
+
   yPosition += 3;
+
+  if (candidate.signature) {
+    try {
+      // Auto-detect format from data URI
+      doc.addImage(candidate.signature, margin, yPosition - 15, 40, 15);
+    } catch (error) {
+      console.warn('Auto-detect signature format failed, retrying as PNG:', error);
+      try {
+        doc.addImage(candidate.signature, 'PNG', margin, yPosition - 15, 40, 15);
+      } catch (e2) {
+        console.error('Error adding signature:', e2);
+      }
+    }
+  }
+
   doc.setDrawColor(100);
   doc.line(margin, yPosition, margin + 35, yPosition);
   doc.setFontSize(8);
@@ -119,6 +139,7 @@ export const downloadSelfDeclarationFormPDF = async (candidate) => {
   doc.save(fileName);
   if (candidate.email) {
     try {
+      const { uploadPdfToDrive } = await import('./driveUpload.js');
       const pdfBlob = doc.output('blob');
       const arrayBuffer = await pdfBlob.arrayBuffer();
       const pdfBytes = new Uint8Array(arrayBuffer);

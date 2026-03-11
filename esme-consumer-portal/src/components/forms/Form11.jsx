@@ -6,7 +6,7 @@ import SignatureCapture from './SignatureCapture';
 
 export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
   const { isDark } = useTheme();
-  
+
 
   const getValue = (key, ...fallbacks) => {
 
@@ -23,7 +23,7 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
     }
     return '';
   };
-  
+
 
   const [form11Data, setForm11Data] = useState({
 
@@ -34,34 +34,34 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
     maritalStatus: getValue('maritalStatus'),
     mobileNumber: getValue('mobileNumber'),
     email: getValue('email', 'personalEmail'),
-    
+
 
     education: getValue('education', 'highestQualification', 'qualification'),
-    
+
 
     speciallyAbled: getValue('speciallyAbled') || 'no',
     disabilityType: getValue('disabilityType'),
-    
+
 
     currentEmployerName: getValue('currentEmployerName', 'employerName') || 'ESME Consumer Pvt Ltd',
     dateOfJoining: getValue('dateOfJoining'),
-    
+
 
     permanentAddress: getValue('permanentAddress'),
     permanentCity: getValue('permanentCity'),
     permanentState: getValue('permanentState'),
     permanentPincode: getValue('permanentPincode'),
-    
+
 
     aadhaarNumber: getValue('aadhaarNumber'),
     panNumber: getValue('panNumber'),
     uanNumber: getValue('uanNumber'),
-    
+
 
     bankAccountNumber: getValue('bankAccountNumber', 'accountNumber'),
     ifscCode: getValue('ifscCode'),
     bankName: getValue('bankName'),
-    
+
 
     hasPreviousEmployment: getValue('hasPreviousEmployment') || false,
     previousPFMember: getValue('previousPFMember') || false,
@@ -71,7 +71,7 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
     previousEmploymentExitDate: getValue('previousEmploymentExitDate'),
     schemeClaimSettled: getValue('schemeClaimSettled'),
     pfClaimSettled: getValue('pfClaimSettled'),
-    
+
 
     pensionClaimReceived: getValue('pensionClaimReceived') || false,
     internationalWorker: getValue('internationalWorker') || false,
@@ -79,18 +79,18 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
     passportValidityFrom: getValue('passportValidityFrom'),
     passportValidityTo: getValue('passportValidity', 'passportValidityTo'),
     countryOfOrigin: getValue('countryOfOrigin') || 'India',
-    
+
 
     optForEPS: formData.optForEPS !== undefined ? formData.optForEPS : true,
     optForHigherPension: getValue('optForHigherPension') || false,
-    
+
 
     nomineeName: getValue('nomineeName') || formData.formFData?.nominees?.[0]?.name || formData.formF_nominees?.[0]?.name || '',
     nomineeRelationship: getValue('nomineeRelationship') || formData.formFData?.nominees?.[0]?.relationship || formData.formF_nominees?.[0]?.relationship || '',
     nomineeAddress: getValue('nomineeAddress') || formData.formFData?.nominees?.[0]?.address || formData.formF_nominees?.[0]?.address || '',
     nomineeDateOfBirth: getValue('nomineeDateOfBirth'),
     nomineeAadhaar: getValue('nomineeAadhaar'),
-    
+
 
     declarationAccepted: getValue('form11DeclarationAccepted') || false,
     declarationDate: new Date().toISOString().split('T')[0],
@@ -117,24 +117,24 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
       'permanentAddress', 'permanentCity', 'permanentState', 'permanentPincode',
       'dateOfJoining', 'bankAccountNumber', 'ifscCode'
     ];
-    
+
     for (const field of requiredFields) {
       if (!form11Data[field]) {
         alert(`Please fill in the required field: ${field.replace(/([A-Z])/g, ' $1').trim()}`);
         return false;
       }
     }
-    
+
     if (!form11Data.declarationAccepted) {
       alert('Please accept the declaration to proceed');
       return false;
     }
-    
+
     if (!form11Data.employeeSignature) {
       alert('Please provide your signature to proceed');
       return false;
     }
-    
+
     return true;
   };
 
@@ -143,6 +143,9 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
       onFormDataChange({
         ...formData,
         form11Data: form11Data,
+        // Spread all form11Data fields to top level for easy access
+        ...form11Data,
+        // Ensure specific fields are at top level
         uanNumber: form11Data.uanNumber,
         previousUAN: form11Data.previousUAN,
         previousPFNumber: form11Data.previousPFNumber,
@@ -150,6 +153,13 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
         education: form11Data.education,
         speciallyAbled: form11Data.speciallyAbled,
         disabilityType: form11Data.disabilityType,
+        // Nominee data
+        nomineeName: form11Data.nomineeName,
+        nomineeRelationship: form11Data.nomineeRelationship,
+        nomineeAddress: form11Data.nomineeAddress,
+        nomineeDateOfBirth: form11Data.nomineeDateOfBirth,
+        nomineeAadhaar: form11Data.nomineeAadhaar,
+        // Declaration
         form11DeclarationAccepted: form11Data.declarationAccepted,
         form11Signature: form11Data.employeeSignature
       });
@@ -157,11 +167,10 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
     }
   };
 
-  const inputClass = `w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all duration-200 ${
-    isDark 
-      ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400' 
+  const inputClass = `w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all duration-200 ${isDark
+      ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400'
       : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'
-  }`;
+    }`;
 
   const labelClass = `block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`;
 
@@ -176,7 +185,7 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      {}
+      { }
       <div className={`p-4 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
         <div className="flex items-start gap-3">
           <div className={`p-2 rounded-lg ${isDark ? 'bg-purple-900/50' : 'bg-purple-100'}`}>
@@ -194,7 +203,7 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
         </div>
       </div>
 
-      {}
+      { }
       <div className={sectionClass}>
         <SectionTitle icon={User} title="Personal Details" />
         <div className="grid md:grid-cols-3 gap-4">
@@ -287,8 +296,8 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
               placeholder="Enter email"
             />
           </div>
-          
-          {}
+
+          { }
           <div>
             <label className={labelClass}>Educational Qualification *</label>
             <select
@@ -309,8 +318,8 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
               <option value="PhD">PhD / Doctorate</option>
             </select>
           </div>
-          
-          {}
+
+          { }
           <div>
             <label className={labelClass}>Are you Specially Abled?</label>
             <select
@@ -323,7 +332,7 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
               <option value="yes">Yes</option>
             </select>
           </div>
-          
+
           {form11Data.speciallyAbled === 'yes' && (
             <div>
               <label className={labelClass}>Type of Disability</label>
@@ -344,7 +353,7 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
         </div>
       </div>
 
-      {}
+      { }
       <div className={sectionClass}>
         <SectionTitle icon={User} title="Permanent Address (As per Aadhaar)" />
         <div className="grid md:grid-cols-2 gap-4">
@@ -400,7 +409,7 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
         </div>
       </div>
 
-      {}
+      { }
       <div className={sectionClass}>
         <SectionTitle icon={Briefcase} title="Present Employment Details" />
         <div className="grid md:grid-cols-2 gap-4">
@@ -430,7 +439,7 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
         </div>
       </div>
 
-      {}
+      { }
       <div className={sectionClass}>
         <SectionTitle icon={FileText} title="KYC Details" />
         <div className="grid md:grid-cols-3 gap-4">
@@ -498,10 +507,10 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
         </div>
       </div>
 
-      {}
+      { }
       <div className={sectionClass}>
         <SectionTitle icon={Briefcase} title="Previous Employment Details (EPF/EPS)" />
-        
+
         <div className="space-y-4">
           <label className={`flex items-center gap-2 cursor-pointer ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
             <input
@@ -609,7 +618,7 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
         </div>
       </div>
 
-      {}
+      { }
       <div className={sectionClass}>
         <SectionTitle icon={User} title="International Worker Details" />
         <div className="space-y-4">
@@ -673,7 +682,7 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
         </div>
       </div>
 
-      {}
+      { }
       <div className={sectionClass}>
         <SectionTitle icon={FileText} title="EPF/EPS Scheme Options" />
         <div className="space-y-4">
@@ -687,15 +696,15 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
             />
             <span className="text-sm">I opt for Employee Pension Scheme (EPS), 1995</span>
           </label>
-          
+
           <div className={`p-3 rounded-lg text-sm ${isDark ? 'bg-slate-700/50 text-slate-400' : 'bg-slate-100 text-slate-600'}`}>
-            <p><strong>Note:</strong> If you opt for EPS, 8.33% of your basic salary (up to ₹15,000) will be diverted to the pension fund. 
-            If you don't opt, the entire 12% employer contribution will go to your EPF account.</p>
+            <p><strong>Note:</strong> If you opt for EPS, 8.33% of your basic salary (up to ₹15,000) will be diverted to the pension fund.
+              If you don't opt, the entire 12% employer contribution will go to your EPF account.</p>
           </div>
         </div>
       </div>
 
-      {}
+      { }
       {form11Data.optForEPS && (
         <div className={sectionClass}>
           <SectionTitle icon={User} title="Nominee Details (For EPS)" />
@@ -766,7 +775,7 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
         </div>
       )}
 
-      {}
+      { }
       <div className={`p-6 rounded-xl border ${isDark ? 'bg-amber-900/20 border-amber-800' : 'bg-amber-50 border-amber-200'}`}>
         <h4 className={`text-lg font-semibold mb-4 ${isDark ? 'text-amber-300' : 'text-amber-800'}`}>
           Declaration
@@ -813,8 +822,8 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
           />
           <span className="text-sm font-medium">I accept the above declaration *</span>
         </label>
-        
-        {}
+
+        { }
         <SignatureCapture
           label="Employee Signature"
           value={form11Data.employeeSignature}
@@ -823,16 +832,15 @@ export default function Form11({ formData, onFormDataChange, onNext, onBack }) {
         />
       </div>
 
-      {}
+      { }
       <div className="flex justify-between pt-4">
         <button
           type="button"
           onClick={onBack}
-          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
-            isDark 
-              ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' 
+          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${isDark
+              ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
               : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-          }`}
+            }`}
         >
           <ChevronLeft size={20} />
           Back

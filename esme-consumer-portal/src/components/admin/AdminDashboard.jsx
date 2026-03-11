@@ -12,6 +12,7 @@ import { fadeInUp, staggerFadeInUp, scaleIn, modalEnter } from '../../utils/gsap
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const SIDEBAR_MENU = [
   { id: 'dashboard', label: 'Dashboard', icon: Home },
+  { id: 'whitelist', label: 'Eligible Candidates', icon: UserCog },
   { id: 'admins', label: 'Manage Admins', icon: Shield, superAdminOnly: true },
 ];
 export default function AdminDashboard({ user, onLogout }) {
@@ -56,14 +57,35 @@ export default function AdminDashboard({ user, onLogout }) {
   });
   const [adminSearchTerm, setAdminSearchTerm] = useState('');
   
+  // Whitelist states
+  const [whitelistCandidates, setWhitelistCandidates] = useState([]);
+  const [loadingWhitelist, setLoadingWhitelist] = useState(false);
+  const [whitelistSearchTerm, setWhitelistSearchTerm] = useState('');
+  const [refreshingWhitelist, setRefreshingWhitelist] = useState(false);
+  
   const statsCardsRef = useRef([]);
   const candidateRowsRef = useRef([]);
+
+  // Calculate filtered candidates and stats before using them in effects
+  const filteredCandidates = candidates.filter(c => {
+    const matchesSearch = c.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         c.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || c.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const stats = {
+    total: candidates.length,
+    pending: candidates.filter(c => c.status === 'pending').length,
+    completed: candidates.filter(c => c.status === 'completed').length,
+    verified: candidates.filter(c => c.verificationStatus?.aadhaar === 'verified').length
+  };
 
   useEffect(() => {
     if (statsCardsRef.current.length > 0 && activeSection === 'dashboard') {
       staggerFadeInUp(statsCardsRef.current.filter(el => el), 0.1);
     }
-  }, [activeSection, stats]);
+  }, [activeSection, stats.total, stats.pending, stats.completed, stats.verified]);
 
   useEffect(() => {
     if (candidateRowsRef.current.length > 0) {
@@ -73,7 +95,7 @@ export default function AdminDashboard({ user, onLogout }) {
         { opacity: 1, x: 0, duration: 0.4, stagger: 0.05, ease: 'power2.out' }
       );
     }
-  }, [filteredCandidates]);
+  }, [filteredCandidates.length, statusFilter, searchTerm]);
 
   useEffect(() => {
     fetchCandidates();
@@ -81,11 +103,54 @@ export default function AdminDashboard({ user, onLogout }) {
     if (user.role === 'super_admin') {
       fetchAdmins();
     }
+    fetchWhitelist();
   }, []);
+
+  const fetchWhitelist = async () => {
+    try {
+      setLoadingWhitelist(true);
+      const res = await fetch(`${API_URL}/admin/whitelist`);
+      const data = await res.json();
+      if (data.success && Array.isArray(data.whitelist)) {
+        setWhitelistCandidates(data.whitelist);
+      } else {
+        console.error('Invalid whitelist format:', data);
+        setWhitelistCandidates([]);
+      }
+    } catch (error) {
+      console.error('Error fetching whitelist:', error);
+      setWhitelistCandidates([]);
+    } finally {
+      setLoadingWhitelist(false);
+    }
+  };
+
+  const handleRefreshWhitelist = async () => {
+    try {
+      setRefreshingWhitelist(true);
+      const res = await fetch(`${API_URL}/admin/refresh-whitelist`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`Whitelist refreshed! ${data.count || 0} candidates loaded from Google Sheet.`);
+        fetchWhitelist();
+      } else {
+        alert(data.message || 'Failed to refresh whitelist. Check Google Sheets credentials.');
+      }
+    } catch (error) {
+      alert('Error refreshing whitelist. Check Google Sheets credentials.');
+      console.error(error);
+    } finally {
+      setRefreshingWhitelist(false);
+    }
+  };
+
   const fetchAdmins = async () => {
     try {
       setLoadingAdmins(true);
-      const res = await fetch(`${API_URL}/admin/admins?userId=${user._id}`);
+      const res = await fetch(`${API_URL}/admin/admins?userId=${user.id}`);
       const data = await res.json();
       if (Array.isArray(data)) {
         setAdmins(data);
@@ -346,18 +411,7 @@ export default function AdminDashboard({ user, onLogout }) {
     a.click();
     window.URL.revokeObjectURL(url);
   };
-  const filteredCandidates = candidates.filter(c => {
-    const matchesSearch = c.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         c.email?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || c.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-  const stats = {
-    total: candidates.length,
-    pending: candidates.filter(c => c.status === 'pending').length,
-    completed: candidates.filter(c => c.status === 'completed').length,
-    verified: candidates.filter(c => c.verificationStatus?.aadhaar === 'verified').length
-  };
+
   const renderOverview = () => (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-gray-800">Dashboard Overview</h2>
@@ -475,10 +529,18 @@ export default function AdminDashboard({ user, onLogout }) {
                 <tr key={candidate._id} className="hover:bg-gray-50 transition-all-smooth cursor-pointer">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-teal-600 font-semibold text-xs">
-                          {candidate.name?.charAt(0).toUpperCase()}
-                        </span>
+                      <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        {candidate.profileData?.joiningFormData?.employeePhoto ? (
+                          <img
+                            src={candidate.profileData.joiningFormData.employeePhoto}
+                            alt={candidate.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-teal-600 font-semibold text-xs">
+                            {candidate.name?.charAt(0).toUpperCase()}
+                          </span>
+                        )}
                       </div>
                       <div className="min-w-0">
                         <p className="font-medium text-gray-800 text-sm truncate">{candidate.name}</p>
@@ -491,26 +553,67 @@ export default function AdminDashboard({ user, onLogout }) {
                     <p className="text-xs text-gray-500">{candidate.mobile || 'N/A'}</p>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                      candidate.status === 'approved' ? 'bg-green-100 text-green-700' :
-                      candidate.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                      candidate.status === 'pending' ? 'bg-amber-100 text-amber-700' :
-                      'bg-gray-100 text-gray-700'
-                    }`}>
-                      {candidate.status || 'pending'}
-                    </span>
+                    <div className="flex flex-col gap-1">
+                      <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium w-fit ${
+                        candidate.status === 'approved' ? 'bg-green-100 text-green-700' :
+                        candidate.status === 'submitted' ? 'bg-blue-100 text-blue-700' :
+                        candidate.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                        candidate.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {candidate.status || 'pending'}
+                      </span>
+                      {candidate.isLocked && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 w-fit">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                          Locked
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">
                     {new Date(candidate.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => handleViewCandidate(candidate._id)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-teal-50 text-teal-700 rounded-lg hover:bg-teal-100 transition-all-smooth hover:scale-105-smooth text-xs font-medium"
-                    >
-                      <FileText className="w-3 h-3" />
-                      View Details
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      {candidate.isLocked && (
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (confirm(`Unlock profile for ${candidate.name}? They will be able to edit their forms again.`)) {
+                              try {
+                                const response = await fetch('/api/admin/unlock-profile', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ candidateId: candidate._id })
+                                });
+                                if (response.ok) {
+                                  alert(`✅ Profile unlocked for ${candidate.name}`);
+                                  fetchCandidates(); // Refresh the list
+                                } else {
+                                  alert('Failed to unlock profile');
+                                }
+                              } catch (error) {
+                                console.error('Error unlocking profile:', error);
+                                alert('Error unlocking profile');
+                              }
+                            }
+                          }}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition-all-smooth hover:scale-105-smooth text-xs font-medium"
+                          title="Unlock Profile"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+                          Unlock
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleViewCandidate(candidate._id)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-teal-50 text-teal-700 rounded-lg hover:bg-teal-100 transition-all-smooth hover:scale-105-smooth text-xs font-medium"
+                      >
+                        <FileText className="w-3 h-3" />
+                        View Details
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -584,10 +687,13 @@ export default function AdminDashboard({ user, onLogout }) {
           return;
         }
       }
-      const res = await fetch(`${API_URL}/admin/create`, {
+      const res = await fetch(`${API_URL}/admin/create-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(adminForm)
+        body: JSON.stringify({
+          ...adminForm,
+          creatorId: user.id
+        })
       });
       if (res.ok) {
         alert('Admin created successfully!');
@@ -686,6 +792,119 @@ export default function AdminDashboard({ user, onLogout }) {
     a.name?.toLowerCase().includes(adminSearchTerm.toLowerCase()) ||
     a.email?.toLowerCase().includes(adminSearchTerm.toLowerCase())
   );
+
+  const renderWhitelist = () => {
+    const filteredWhitelist = whitelistCandidates.filter(candidate => {
+      const searchLower = whitelistSearchTerm.toLowerCase();
+      return (
+        candidate.name?.toLowerCase().includes(searchLower) ||
+        candidate.email?.toLowerCase().includes(searchLower) ||
+        candidate.mobile?.includes(whitelistSearchTerm)
+      );
+    });
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-800">Eligible Candidates Whitelist</h2>
+          <button
+            onClick={handleRefreshWhitelist}
+            disabled={refreshingWhitelist}
+            className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-all-smooth hover:scale-105-smooth text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <RotateCcw className={`w-4 h-4 ${refreshingWhitelist ? 'animate-spin' : ''}`} />
+            {refreshingWhitelist ? 'Refreshing...' : 'Refresh from Sheet'}
+          </button>
+        </div>
+
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+          <div className="mb-4 flex items-center gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                placeholder="Search by name, email, or mobile..."
+                value={whitelistSearchTerm}
+                onChange={(e) => setWhitelistSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          {loadingWhitelist ? (
+            <div className="text-center py-12">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
+              <p className="mt-2 text-gray-600">Loading whitelist...</p>
+            </div>
+          ) : filteredWhitelist.length === 0 ? (
+            <div className="text-center py-12">
+              <UserCog className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500">
+                {whitelistSearchTerm ? 'No candidates match your search' : 'No whitelisted candidates found'}
+              </p>
+              <p className="text-sm text-gray-400 mt-2">
+                Click "Refresh from Sheet" to load candidates from Google Sheets
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Email
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Mobile
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredWhitelist.map((candidate, index) => (
+                    <tr key={index} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
+                            <span className="text-teal-600 font-semibold text-sm">
+                              {candidate.name?.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="ml-3">
+                            <p className="font-medium text-gray-800">{candidate.name}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <p className="text-sm text-gray-800">{candidate.email}</p>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <p className="text-sm text-gray-800">{candidate.mobile}</p>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                          Eligible
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="mt-4 text-sm text-gray-600">
+                Showing {filteredWhitelist.length} of {whitelistCandidates.length} candidates
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const renderAdminManagement = () => (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -750,7 +969,7 @@ export default function AdminDashboard({ user, onLogout }) {
                         </div>
                         <div>
                           <p className="font-medium text-gray-800">{admin.name}</p>
-                          {admin._id === user._id && (
+                          {admin._id === user.id && (
                             <span className="text-xs text-teal-600 font-medium">(You)</span>
                           )}
                         </div>
@@ -780,7 +999,7 @@ export default function AdminDashboard({ user, onLogout }) {
                         >
                           <Pen className="w-4 h-4 text-gray-600" />
                         </button>
-                        {admin._id !== user._id && (
+                        {admin._id !== user.id && (
                           <button
                             onClick={() => openDeleteConfirm(admin)}
                             className="p-2 hover:bg-red-50 rounded-lg transition-all-smooth hover:scale-110"
@@ -884,6 +1103,7 @@ export default function AdminDashboard({ user, onLogout }) {
           ) : (
             <>
               {activeSection === 'dashboard' && renderDashboard()}
+              {activeSection === 'whitelist' && renderWhitelist()}
               {activeSection === 'admins' && renderAdminManagement()}
             </>
           )}

@@ -9,6 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@surepass/esign": "^1.1.5",
+    "axios": "^1.13.5",
     "gsap": "^3.14.2",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.0.0",

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
-import { ChevronRight, ChevronLeft, Info, User, Briefcase, Home, Users, GraduationCap, Heart, Plus, Trash2, Building, Phone, FileText } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Info, User, Briefcase, Home, Users, GraduationCap, Heart, Plus, Trash2, Building, Phone, FileText, Camera, Upload, X } from 'lucide-react';
 import SignatureCapture from './SignatureCapture';
 
 
@@ -106,7 +106,10 @@ export default function EmployeeJoiningForm({ formData, onFormDataChange, onNext
     declarationAccepted: formData.declarationAccepted || false,
     declarationDate: formData.declarationDate || new Date().toISOString().split('T')[0],
     declarationPlace: formData.declarationPlace || formData.currentCity || '',
-    employeeSignature: formData.employeeSignature || ''
+    employeeSignature: formData.employeeSignature || '',
+
+    // Photo
+    employeePhoto: formData.employeePhoto || null
   });
 
   // Multiple Education Entries
@@ -147,6 +150,13 @@ export default function EmployeeJoiningForm({ formData, onFormDataChange, onNext
       { name: '', contactNo: '', designation: '', organization: '' }
     ]
   );
+
+  // Camera and Photo states
+  const [showCamera, setShowCamera] = useState(false);
+  const [cameraError, setCameraError] = useState('');
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (formData.joiningFormData) {
@@ -288,6 +298,62 @@ export default function EmployeeJoiningForm({ formData, onFormDataChange, onNext
     const updated = [...references];
     updated[index][field] = value;
     setReferences(updated);
+  };
+
+  // Photo/Camera handlers
+  const startCamera = async () => {
+    try {
+      setCameraError('');
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
+      });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        setShowCamera(true);
+      }
+    } catch (error) {
+      setCameraError('Unable to access camera: ' + error.message);
+    }
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const context = canvasRef.current.getContext('2d');
+      canvasRef.current.width = videoRef.current.videoWidth;
+      canvasRef.current.height = videoRef.current.videoHeight;
+      context.drawImage(videoRef.current, 0, 0);
+      
+      canvasRef.current.toBlob(blob => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setJoiningData(prev => ({ ...prev, employeePhoto: reader.result }));
+          stopCamera();
+        };
+        reader.readAsDataURL(blob);
+      }, 'image/jpeg', 0.9);
+    }
+  };
+
+  const stopCamera = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+    }
+    setShowCamera(false);
+  };
+
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setJoiningData(prev => ({ ...prev, employeePhoto: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removePhoto = () => {
+    setJoiningData(prev => ({ ...prev, employeePhoto: null }));
   };
 
   const validateForm = () => {
@@ -527,6 +593,102 @@ export default function EmployeeJoiningForm({ formData, onFormDataChange, onNext
             <input type="text" name="religion" value={joiningData.religion} onChange={handleChange} className={inputClass} placeholder="Enter religion" />
           </div>
         </div>
+      </div>
+
+      {/* Photo Section */}
+      <div className={sectionClass}>
+        <SectionTitle icon={Camera} title="Employee Photo" />
+        
+        {showCamera ? (
+          <div className="space-y-4">
+            <div className={`rounded-lg overflow-hidden border-2 border-teal-500 ${isDark ? 'bg-slate-700' : 'bg-slate-100'}`}>
+              <video ref={videoRef} autoPlay playsInline className="w-full h-auto" />
+            </div>
+            <canvas ref={canvasRef} className="hidden" />
+            {cameraError && <p className="text-red-500 text-sm">{cameraError}</p>}
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={capturePhoto}
+                className="flex-1 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-lg transition-colors"
+              >
+                Capture Photo
+              </button>
+              <button
+                type="button"
+                onClick={stopCamera}
+                className="flex-1 px-4 py-2.5 bg-slate-400 hover:bg-slate-500 text-white font-medium rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : joiningData.employeePhoto ? (
+          <div className="space-y-4">
+            <div className={`rounded-lg overflow-hidden border-2 border-teal-500 ${isDark ? 'bg-slate-700' : 'bg-slate-100'} p-4`}>
+              <img src={joiningData.employeePhoto} alt="Employee Photo" className="w-48 h-48 object-cover rounded-lg mx-auto" />
+            </div>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={startCamera}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+              >
+                <Camera size={18} />
+                Retake Photo
+              </button>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+              >
+                <Upload size={18} />
+                Upload Photo
+              </button>
+              <button
+                type="button"
+                onClick={removePhoto}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors"
+              >
+                <X size={18} />
+                Remove
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className={`rounded-lg border-2 border-dashed p-8 text-center ${isDark ? 'border-slate-600' : 'border-slate-300'}`}>
+              <Camera className={`mx-auto mb-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} size={40} />
+              <p className={isDark ? 'text-slate-300' : 'text-slate-600'}>No photo captured yet</p>
+              <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'} mt-1`}>Choose from options below</p>
+            </div>
+            <div className="grid md:grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={startCamera}
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-lg transition-colors"
+              >
+                <Camera size={20} />
+                Capture Photo
+              </button>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-lg transition-colors"
+              >
+                <Upload size={20} />
+                Upload Photo
+              </button>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoUpload}
+              className="hidden"
+            />
+          </div>
+        )}
       </div>
 
       {/* Contact Details */}

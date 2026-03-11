@@ -1,7 +1,7 @@
-import { uploadPdfToDrive } from './driveUpload';
+
 
 export const generateChecklistPDF = async (candidate) => {
-  const jsPDF = (await import('jspdf')).default;
+  const { jsPDF } = await import('jspdf');
   const doc = new jsPDF('p', 'mm', 'a4');
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -12,16 +12,16 @@ export const generateChecklistPDF = async (candidate) => {
 
   doc.setFillColor(30, 70, 120);
   doc.rect(0, 0, pageWidth, 35, 'F');
-  
+
   doc.setFontSize(18);
   doc.setTextColor(255, 255, 255);
   doc.setFont(undefined, 'bold');
   doc.text('JOINING DOCUMENT CHECKLIST', pageWidth / 2, 15, { align: 'center' });
-  
+
   doc.setFontSize(10);
   doc.setFont(undefined, 'normal');
   doc.text('Esme Consumer (P) Ltd.', pageWidth / 2, 23, { align: 'center' });
-  
+
   doc.setFontSize(8);
   doc.text(`Generated: ${new Date().toLocaleDateString('en-IN')}`, pageWidth / 2, 30, { align: 'center' });
 
@@ -91,8 +91,8 @@ export const generateChecklistPDF = async (candidate) => {
     { name: 'Self Declaration Form', required: true, formKey: 'selfDeclarationData' },
     { name: '10th Standard Certificate', required: true, docType: '10th' },
     { name: '12th Standard Certificate', required: true, docType: '12th' },
-    { name: 'Undergraduate Degree', required: true, docType: 'degree' },
-    { name: 'Postgraduate Degree', required: false, docType: 'postgrad' },
+    { name: 'Undergraduate Degree', required: true, docType: 'undergraduate' },
+    { name: 'Postgraduate Degree', required: false, docType: 'postgraduate' },
     { name: 'Experience Letters', required: false, docType: 'experience' },
     { name: 'Aadhaar Card Copy', required: true, docType: 'aadhaar' },
     { name: 'PAN Card Copy', required: true, docType: 'pan' },
@@ -103,8 +103,9 @@ export const generateChecklistPDF = async (candidate) => {
 
 
   const uploadedDocs = candidate.documents?.map(d => d.type?.toLowerCase()) || [];
+  console.log('📄 Checklist Generation - Uploaded Docs:', uploadedDocs);
   const profileData = candidate.profileData || {};
-  
+
   // Check if form data exists (form was filled/generated)
   const isFormGenerated = (formKey, altFormKey) => {
     if (!formKey) return false;
@@ -112,15 +113,15 @@ export const generateChecklistPDF = async (candidate) => {
     const altFormData = altFormKey ? profileData[altFormKey] : null;
     return (formData && Object.keys(formData).length > 0) || (altFormData && Object.keys(altFormData).length > 0);
   };
-  
+
   // Check if document was uploaded
   const isDocUploaded = (docType) => {
     if (!docType) return false;
-    return uploadedDocs.some(d => 
+    return uploadedDocs.some(d =>
       d && (d.includes(docType) || docType.includes(d.substring(0, 5)))
     );
   };
-  
+
 
   doc.setFillColor(30, 70, 120);
   doc.rect(margin, yPosition, pageWidth - 2 * margin, 7, 'F');
@@ -146,7 +147,7 @@ export const generateChecklistPDF = async (candidate) => {
 
   doc.setFont(undefined, 'normal');
   doc.setTextColor(30, 40, 50);
-  
+
   documents.forEach((docItem, index) => {
     if (yPosition > pageHeight - 30) {
       doc.addPage();
@@ -163,12 +164,12 @@ export const generateChecklistPDF = async (candidate) => {
     doc.text(`${index + 1}`, margin + 5, yPosition);
     doc.text(docItem.name, margin + 15, yPosition);
     doc.text(docItem.required ? 'Yes' : 'No', margin + 105, yPosition);
-    
+
     // Check if form is generated or document is uploaded
-    const isCompleted = docItem.formKey 
-      ? isFormGenerated(docItem.formKey, docItem.altFormKey) 
+    const isCompleted = docItem.formKey
+      ? isFormGenerated(docItem.formKey, docItem.altFormKey)
       : isDocUploaded(docItem.docType);
-    
+
     // Submitted checkbox
     doc.rect(margin + 130, yPosition - 3, 4, 4);
     if (isCompleted) {
@@ -176,7 +177,7 @@ export const generateChecklistPDF = async (candidate) => {
       doc.text('✓', margin + 130.5, yPosition);
       doc.setFontSize(8);
     }
-    
+
     // Verified checkbox (empty for HR to fill)
     doc.rect(margin + 157, yPosition - 3, 4, 4);
 
@@ -208,12 +209,12 @@ export const generateChecklistPDF = async (candidate) => {
   doc.text('Candidate Name:', margin, yPosition);
   doc.setFont(undefined, 'normal');
   doc.text(candidate.name || '________________________', margin + 35, yPosition);
-  
+
   doc.setFont(undefined, 'bold');
   doc.text('Submitted Date:', margin + 95, yPosition);
   doc.setFont(undefined, 'normal');
-  const submittedDate = candidate.submittedAt 
-    ? new Date(candidate.submittedAt).toLocaleDateString('en-IN') 
+  const submittedDate = candidate.submittedAt
+    ? new Date(candidate.submittedAt).toLocaleDateString('en-IN')
     : '________________________';
   doc.text(submittedDate, margin + 130, yPosition);
   yPosition += 12;
@@ -223,12 +224,12 @@ export const generateChecklistPDF = async (candidate) => {
   doc.text('Verified By HR:', margin, yPosition);
   doc.setFont(undefined, 'normal');
   doc.text(candidate.hrVerified ? 'Yes' : 'No', margin + 35, yPosition);
-  
+
   doc.setFont(undefined, 'bold');
   doc.text('Approval Date:', margin + 95, yPosition);
   doc.setFont(undefined, 'normal');
-  const approvedDate = candidate.approvedAt 
-    ? new Date(candidate.approvedAt).toLocaleDateString('en-IN') 
+  const approvedDate = candidate.approvedAt
+    ? new Date(candidate.approvedAt).toLocaleDateString('en-IN')
     : '________________________';
   doc.text(approvedDate, margin + 130, yPosition);
   yPosition += 12;
@@ -271,7 +272,7 @@ export const downloadChecklistPDF = async (candidate) => {
   const doc = await generateChecklistPDF(candidate);
   const fileName = `Document_Checklist_${candidate.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
   doc.save(fileName);
-  
+
   // Upload to Google Drive if email available
   if (candidate.email) {
     try {

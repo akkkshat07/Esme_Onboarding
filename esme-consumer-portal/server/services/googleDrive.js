@@ -26,14 +26,14 @@ export const createCandidateFolder = async (candidateName, position, city) => {
   try {
     const drive = getDriveClient();
     const parentFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
-    
+
     if (!parentFolderId) {
       throw new Error('GOOGLE_DRIVE_FOLDER_ID not set in .env');
     }
 
 
     const folderName = `${candidateName} - ${position || 'New Joiner'} - ${city || 'Unspecified'}`;
-    
+
 
     const existingFolders = await drive.files.list({
       q: `name='${folderName}' and '${parentFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
@@ -46,8 +46,7 @@ export const createCandidateFolder = async (candidateName, position, city) => {
       console.log(`📁 Folder already exists: ${folderName}`);
       return {
         folderId: existingFolders.data.files[0].id,
-        folderName,
-        folderLink: existingFolders.data.files[0].webViewLink
+        folderName
       };
     }
 
@@ -65,11 +64,10 @@ export const createCandidateFolder = async (candidateName, position, city) => {
     });
 
     console.log(`✅ Created folder: ${folderName} (${folder.data.id})`);
-    
+
     return {
       folderId: folder.data.id,
-      folderName,
-      folderLink: folder.data.webViewLink
+      folderName
     };
   } catch (error) {
     console.error('❌ Error creating folder:', error.message);
@@ -81,7 +79,7 @@ export const createCandidateFolder = async (candidateName, position, city) => {
 export const uploadFileToDrive = async (folderId, filePath, fileName, mimeType) => {
   try {
     const drive = getDriveClient();
-    
+
     const fileMetadata = {
       name: fileName,
       parents: [folderId]
@@ -132,7 +130,7 @@ export const uploadFileToDrive = async (folderId, filePath, fileName, mimeType) 
 export const listFolderFiles = async (folderId) => {
   try {
     const drive = getDriveClient();
-    
+
     const response = await drive.files.list({
       q: `'${folderId}' in parents and trashed=false`,
       fields: 'files(id, name, mimeType, webViewLink, webContentLink, createdTime)',
@@ -163,7 +161,7 @@ export const deleteFileFromDrive = async (fileId) => {
 export const createSubfolder = async (parentFolderId, folderName) => {
   try {
     const drive = getDriveClient();
-    
+
     const existingFolders = await drive.files.list({
       q: `name='${folderName}' and '${parentFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
       fields: 'files(id, name)',
@@ -200,7 +198,7 @@ export const createSubfolder = async (parentFolderId, folderName) => {
 export const uploadOrReplacePdf = async (folderId, pdfPath, pdfName) => {
   try {
     const drive = getDriveClient();
-    
+
     // Check if file already exists
     const existingFiles = await drive.files.list({
       q: `name='${pdfName}' and '${folderId}' in parents and trashed=false`,
@@ -212,7 +210,7 @@ export const uploadOrReplacePdf = async (folderId, pdfPath, pdfName) => {
     if (existingFiles.data.files?.length > 0) {
       // Replace existing file
       const fileId = existingFiles.data.files[0].id;
-      
+
       const media = {
         mimeType: 'application/pdf',
         body: fs.createReadStream(pdfPath)
@@ -241,7 +239,7 @@ export const uploadOrReplacePdf = async (folderId, pdfPath, pdfName) => {
 export const downloadFileFromDrive = async (fileId) => {
   try {
     const drive = getDriveClient();
-    
+
     const response = await drive.files.get(
       { fileId, alt: 'media', supportsAllDrives: true },
       { responseType: 'stream' }
@@ -303,7 +301,7 @@ export const hasValidToken = () => {
   const projectId = process.env.GOOGLE_PROJECT_ID;
   const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
   const privateKey = process.env.GOOGLE_PRIVATE_KEY;
-  
+
   return !!(projectId && clientEmail && privateKey);
 };
 

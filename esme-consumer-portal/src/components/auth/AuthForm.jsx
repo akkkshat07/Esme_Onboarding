@@ -48,11 +48,15 @@ export default function AuthForm({ onAuthSuccess }) {
         signal: controller.signal
       });
       clearTimeout(timeoutId);
+      
+      console.log('Response status:', res.status); // Debug log
+      
       const text = await res.text();
       let data;
       try {
         data = JSON.parse(text);
       } catch (e) {
+        console.error('JSON Parse Error:', e, text); // Debug log
         throw new Error(`Server Error: ${res.status}`);
       }
       if (!res.ok) throw new Error(data.message || 'Authentication failed');
@@ -130,15 +134,15 @@ export default function AuthForm({ onAuthSuccess }) {
         </div>
         <div className="text-xs uppercase tracking-widest text-slate-400">© 2026 Esme Consumer</div>
       </div>
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative z-10">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8 relative z-10 min-h-screen">
         <div className="w-full max-w-md">
           {}
           <div className="text-center mb-8 lg:hidden">
             <img src={esmeLogo} alt="Esme Logo" className="h-12 mx-auto" />
           </div>
           {}
-          <div className="bg-white/98 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
-            <div className="p-10 space-y-6">
+          <div className="bg-white/98 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 overflow-hidden w-full">
+            <div className="p-6 sm:p-10 space-y-6">
               {}
               <div className="text-center">
                 <h2 className="text-3xl font-bold text-slate-900 mb-2">

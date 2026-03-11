@@ -1,346 +1,278 @@
-import PDFDocument from 'pdfkit';
-import { 
-  createSubfolder, 
-  uploadPdfBufferToDrive, 
-  uploadOrReplacePdf 
-} from './googleDriveOAuth.js';
+import { fillForm11Adobe, fillFormFAdobe, fillForm2Adobe } from './fillFormsAdobe.js';
+import {
+  createSubfolder,
+  uploadOrReplacePdf
+} from './googleDrive.js';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 
-const generatePdfBuffer = (generateFunction, data) => {
-  return new Promise((resolve, reject) => {
-    try {
-      const doc = new PDFDocument({ size: 'A4', margin: 50 });
-      const chunks = [];
+// Import client-side form generators (now work server-side!)
+import { generateJoiningFormPDF } from '../../src/utils/generateJoiningForm.js';
+import { generateMedicalInsuranceFormPDF } from '../../src/utils/generateMedicalForm.js';
+import { generateSelfDeclarationFormPDF } from '../../src/utils/generateSelfDeclaration.js';
+import { generatePolicyAcknowledgment } from '../../src/utils/generatePolicyAcknowledgment.js';
+import { generateChecklistPDF } from '../../src/utils/generateChecklist.js';
 
-      doc.on('data', (chunk) => chunks.push(chunk));
-      doc.on('end', () => resolve(Buffer.concat(chunks)));
-      doc.on('error', reject);
+// Helper to get signature buffer from user data
+const getSignatureBuffer = (data) => {
+  const sigImage = (typeof data.signature === 'string' ? data.signature : data.signature?.signatureImage) ||
+    data.profileData?.employeeSignature ||
+    data.profileData?.form11Signature ||
+    data.profileData?.pfNominationSignature || null;
 
-      generateFunction(doc, data);
-      doc.end();
-    } catch (error) {
-      reject(error);
-    }
-  });
-};
-
-const generateJoiningFormPdf = (doc, data) => {
-  const pd = data.profileData || {};
-  
-  doc.fontSize(16).text('EMPLOYEE JOINING FORM', { align: 'center' });
-  doc.moveDown();
-  doc.fontSize(12).text('ESME CONSUMER (P) LTD', { align: 'center' });
-  doc.moveDown(2);
-
-  doc.fontSize(10);
-  doc.text(`Full Name: ${pd.fullName || data.name || ''}`);
-  doc.text(`Email: ${data.email || ''}`);
-  doc.text(`Mobile: ${data.mobile || ''}`);
-  doc.text(`Date of Birth: ${pd.dateOfBirth || ''}`);
-  doc.text(`Gender: ${pd.gender || ''}`);
-  doc.text(`Blood Group: ${pd.bloodGroup || ''}`);
-  doc.moveDown();
-  
-  doc.text(`Designation: ${pd.designation || ''}`);
-  doc.text(`Department: ${pd.department || ''}`);
-  doc.text(`Date of Joining: ${pd.dateOfJoining || ''}`);
-  doc.moveDown();
-  
-  doc.text(`Father's Name: ${pd.fatherName || ''}`);
-  doc.text(`Mother's Name: ${pd.motherName || ''}`);
-  doc.moveDown();
-  
-  doc.text(`Current Address: ${pd.currentAddress || ''}`);
-  doc.text(`City: ${pd.currentCity || ''}, State: ${pd.currentState || ''}, Pincode: ${pd.currentPincode || ''}`);
-  doc.moveDown();
-  
-  doc.text(`PAN Number: ${pd.panNumber || ''}`);
-  doc.text(`Aadhaar Number: ${pd.aadhaarNumber || ''}`);
-  doc.moveDown();
-  
-  doc.text(`Bank Name: ${pd.bankName || ''}`);
-  doc.text(`Account Number: ${pd.bankAccountNumber || ''}`);
-  doc.text(`IFSC Code: ${pd.ifscCode || ''}`);
-};
-
-const generateMedicalFormPdf = (doc, data) => {
-  const pd = data.profileData || {};
-  
-  doc.fontSize(16).text('MEDICAL INSURANCE FORM', { align: 'center' });
-  doc.moveDown();
-  doc.fontSize(12).text('ESME CONSUMER (P) LTD', { align: 'center' });
-  doc.moveDown(2);
-
-  doc.fontSize(10);
-  doc.text(`Employee Name: ${pd.fullName || data.name || ''}`);
-  doc.text(`Employee Code: ${pd.employeeCode || ''}`);
-  doc.text(`Date of Birth: ${pd.dateOfBirth || ''}`);
-  doc.text(`Blood Group: ${pd.bloodGroup || ''}`);
-  doc.text(`Marital Status: ${pd.maritalStatus || ''}`);
-  doc.moveDown();
-  
-  doc.text(`Emergency Contact: ${pd.emergencyContactName || ''}`);
-  doc.text(`Relation: ${pd.emergencyContactRelation || ''}`);
-  doc.text(`Mobile: ${pd.emergencyContactMobile || ''}`);
-  doc.moveDown();
-  
-  doc.text('Declaration:', { underline: true });
-  doc.text('I hereby declare that the information provided above is true and correct to the best of my knowledge.');
-  doc.moveDown(2);
-  
-  doc.text(`Date: ${new Date().toLocaleDateString()}`);
-  doc.text('Signature: _____________________');
-};
-
-const generateSelfDeclarationPdf = (doc, data) => {
-  const pd = data.profileData || {};
-  
-  doc.fontSize(16).text('SELF DECLARATION FORM', { align: 'center' });
-  doc.moveDown();
-  doc.fontSize(12).text('ESME CONSUMER (P) LTD', { align: 'center' });
-  doc.moveDown(2);
-
-  doc.fontSize(10);
-  doc.text(`I, ${pd.fullName || data.name || ''}, hereby declare that:`);
-  doc.moveDown();
-  
-  doc.text('1. All information provided in my employment application is true and accurate.');
-  doc.text('2. I have not withheld any information that may affect my employment.');
-  doc.text('3. I understand that false information may result in termination.');
-  doc.text('4. I agree to abide by all company policies and procedures.');
-  doc.moveDown(2);
-  
-  doc.text(`Employee Name: ${pd.fullName || data.name || ''}`);
-  doc.text(`Employee Code: ${pd.employeeCode || ''}`);
-  doc.text(`Date: ${new Date().toLocaleDateString()}`);
-  doc.moveDown();
-  doc.text('Signature: _____________________');
-};
-
-const generateForm11Pdf = (doc, data) => {
-  const pd = data.profileData || {};
-  
-  doc.fontSize(16).text('FORM 11 - DECLARATION AND NOMINATION', { align: 'center' });
-  doc.moveDown();
-  doc.fontSize(12).text('(Under EPF Scheme 1952)', { align: 'center' });
-  doc.moveDown(2);
-
-  doc.fontSize(10);
-  doc.text(`Name: ${pd.fullName || data.name || ''}`);
-  doc.text(`Father's/Husband's Name: ${pd.fatherName || ''}`);
-  doc.text(`Date of Birth: ${pd.dateOfBirth || ''}`);
-  doc.text(`Account Number (if previous): ${pd.previousPFNumber || 'New Account'}`);
-  doc.moveDown();
-  
-  doc.text('NOMINATION FOR PROVIDENT FUND:', { underline: true });
-  doc.text(`Nominee Name: ${pd.emergencyContactName || ''}`);
-  doc.text(`Relationship: ${pd.emergencyContactRelation || ''}`);
-  doc.text(`Date of Birth of Nominee: ${'Not Provided'}`);
-  doc.moveDown();
-  
-  doc.text(`Date: ${new Date().toLocaleDateString()}`);
-  doc.text('Signature of Member: _____________________');
-};
-
-const generateFormFPdf = (doc, data) => {
-  const pd = data.profileData || {};
-  
-  doc.fontSize(16).text('FORM F - NOMINATION FOR GRATUITY', { align: 'center' });
-  doc.moveDown();
-  doc.fontSize(12).text('ESME CONSUMER (P) LTD', { align: 'center' });
-  doc.moveDown(2);
-
-  doc.fontSize(10);
-  doc.text(`Name of Employee: ${pd.fullName || data.name || ''}`);
-  doc.text(`Sex: ${pd.gender || ''}`);
-  doc.text(`Religion: ${pd.religion || ''}`);
-  doc.text(`Marital Status: ${pd.maritalStatus || ''}`);
-  doc.text(`Department: ${pd.department || ''}`);
-  doc.moveDown();
-  
-  doc.text('NOMINATION:', { underline: true });
-  doc.text(`I nominate the following person(s) for receiving gratuity:`);
-  doc.moveDown();
-  doc.text(`Name: ${pd.emergencyContactName || ''}`);
-  doc.text(`Relationship: ${pd.emergencyContactRelation || ''}`);
-  doc.text(`Age: ${'Not Provided'}`);
-  doc.text(`Share: 100%`);
-  doc.moveDown(2);
-  
-  doc.text(`Date: ${new Date().toLocaleDateString()}`);
-  doc.text('Signature: _____________________');
-};
-
-const generatePFNominationPdf = (doc, data) => {
-  const pd = data.profileData || {};
-  
-  doc.fontSize(16).text('PF NOMINATION FORM', { align: 'center' });
-  doc.moveDown();
-  doc.fontSize(12).text('ESME CONSUMER (P) LTD', { align: 'center' });
-  doc.moveDown(2);
-
-  doc.fontSize(10);
-  doc.text(`Employee Name: ${pd.fullName || data.name || ''}`);
-  doc.text(`UAN Number: ${pd.uanNumber || 'To be assigned'}`);
-  doc.text(`PF Number: ${pd.previousPFNumber || 'New'}`);
-  doc.moveDown();
-  
-  doc.text('FAMILY DETAILS:', { underline: true });
-  doc.text(`Father: ${pd.fatherName || ''}`);
-  doc.text(`Mother: ${pd.motherName || ''}`);
-  if (pd.spouseName) {
-    doc.text(`Spouse: ${pd.spouseName}`);
+  if (sigImage && typeof sigImage === 'string' && sigImage.startsWith('data:image')) {
+    const base64Data = sigImage.replace(/^data:image\/\w+;base64,/, '');
+    return Buffer.from(base64Data, 'base64');
   }
-  doc.moveDown();
-  
-  doc.text('NOMINEE DETAILS:', { underline: true });
-  doc.text(`Name: ${pd.emergencyContactName || ''}`);
-  doc.text(`Relationship: ${pd.emergencyContactRelation || ''}`);
-  doc.moveDown(2);
-  
-  doc.text(`Date: ${new Date().toLocaleDateString()}`);
-  doc.text('Signature: _____________________');
-};
-
-const generatePolicyAcknowledgmentPdf = (doc, data) => {
-  const pd = data.profileData || {};
-  
-  doc.fontSize(16).text('POLICY ACKNOWLEDGMENT & DECLARATION', { align: 'center' });
-  doc.moveDown();
-  doc.fontSize(12).text('ESME CONSUMER (P) LTD', { align: 'center' });
-  doc.moveDown(2);
-
-  doc.fontSize(11).text('Employee Information', { underline: true });
-  doc.moveDown(0.5);
-  doc.fontSize(10);
-  doc.text(`Name: ${pd.fullName || data.name || ''}`);
-  doc.text(`Employee Code: ${pd.employeeCode || 'N/A'}`);
-  doc.text(`Department: ${pd.department || pd.division || 'N/A'}`);
-  doc.text(`Designation: ${pd.designation || 'N/A'}`);
-  doc.text(`Date of Joining: ${pd.dateOfJoining || 'N/A'}`);
-  doc.moveDown();
-  
-  doc.fontSize(11).text('POLICY ACKNOWLEDGMENT', { underline: true });
-  doc.moveDown(0.5);
-  doc.fontSize(10).text('I hereby acknowledge and confirm that:', { bold: true });
-  doc.moveDown(0.5);
-  
-  const acknowledgments = [
-    'I have received, accessed, and carefully read the complete "ESME Company Policies" document provided to me during the onboarding process.',
-    'I have had sufficient opportunity to review all company policies, procedures, and guidelines contained in the policies document.',
-    'I understand all the policies, rules, regulations, and expectations outlined in the company policies document.',
-    'I agree to comply with and abide by all policies, procedures, and guidelines set forth by ESME Consumer (P) Ltd.',
-    'I understand that violation of any company policy may result in disciplinary action, up to and including termination of employment.',
-    'I acknowledge that the company reserves the right to modify, amend, or update policies at any time, and I will be notified of any such changes.',
-    'I understand that my continued employment is contingent upon my compliance with all company policies and procedures.'
-  ];
-  
-  acknowledgments.forEach((ack, index) => {
-    doc.text(`${index + 1}. ${ack}`, { width: 500 });
-    doc.moveDown(0.3);
-  });
-  
-  doc.moveDown();
-  doc.fontSize(11).text('DECLARATION', { underline: true });
-  doc.moveDown(0.5);
-  doc.fontSize(10);
-  doc.text('I hereby declare that:', { bold: true });
-  doc.moveDown(0.3);
-  doc.text('• I have read and understood all the company policies and guidelines provided in the ESME Company Policies document.');
-  doc.text('• I agree to comply with all Company policies, procedures, and standards during my employment.');
-  doc.text('• I understand that violation of any policy may result in disciplinary action, including termination of employment.');
-  doc.text('• All information provided by me in my employment application and documents is true and accurate to the best of my knowledge.');
-  
-  doc.moveDown(2);
-  doc.text(`Date: ${new Date().toLocaleDateString('en-IN')}`);
-  doc.text('Employee Signature: _____________________');
-  doc.moveDown();
-  doc.text(`Employee Name: ${pd.fullName || data.name || ''}`);
-  doc.text(`Employee Code: ${pd.employeeCode || 'N/A'}`);
-};
-
-const generateChecklistPdf = (doc, data) => {
-  const pd = data.profileData || {};
-  
-  doc.fontSize(16).text('DOCUMENT CHECKLIST', { align: 'center' });
-  doc.moveDown();
-  doc.fontSize(12).text('ESME CONSUMER (P) LTD', { align: 'center' });
-  doc.moveDown(2);
-
-  doc.fontSize(10);
-  doc.text(`Candidate Name: ${pd.fullName || data.name || ''}`);
-  doc.text(`Employee Code: ${pd.employeeCode || ''}`);
-  doc.text(`Department: ${pd.department || ''}`);
-  doc.moveDown();
-  
-  doc.text('REQUIRED DOCUMENTS:', { underline: true });
-  doc.moveDown();
-  
-  const documents = [
-    'Aadhaar Card',
-    'PAN Card',
-    'Passport Size Photograph',
-    'Educational Certificates',
-    'Experience Letters',
-    'Cancelled Cheque',
-    'Previous Employment Documents',
-    'Address Proof',
-    'Medical Fitness Certificate'
-  ];
-  
-  documents.forEach((docName) => {
-    doc.text(`☐ ${docName}`);
-  });
-  
-  doc.moveDown(2);
-  doc.text('HR Verification:');
-  doc.text('Signature: _____________________');
-  doc.text(`Date: ${new Date().toLocaleDateString()}`);
+  return null;
 };
 
 export const generateAndUploadAllPdfs = async (user) => {
   try {
-    console.log(`📄 Generating PDFs for ${user.name || user.email}...`);
+    console.log(`📄 Generating Adobe PDF forms for ${user.name || user.email}...`);
 
     if (!user.driveFolder?.folderId) {
-      throw new Error('Candidate folder not created in Google Drive');
+      console.log('⚠️ No Drive folder, will save locally only');
     }
 
-    const generatedSubfolder = await createSubfolder(user.driveFolder.folderId, 'generated');
-    
-    const pdfGenerators = [
-      { key: 'joiningForm', fileName: 'Joining_Form.pdf', generator: generateJoiningFormPdf },
-      { key: 'medicalForm', fileName: 'Medical_Insurance_Form.pdf', generator: generateMedicalFormPdf },
-      { key: 'selfDeclaration', fileName: 'Self_Declaration.pdf', generator: generateSelfDeclarationPdf },
-      { key: 'form11', fileName: 'Form_11.pdf', generator: generateForm11Pdf },
-      { key: 'formF', fileName: 'Form_F.pdf', generator: generateFormFPdf },
-      { key: 'pfNomination', fileName: 'PF_Nomination.pdf', generator: generatePFNominationPdf },
-      { key: 'policyAcknowledgment', fileName: 'Policy_Acknowledgment.pdf', generator: generatePolicyAcknowledgmentPdf },
-      { key: 'checklist', fileName: 'Document_Checklist.pdf', generator: generateChecklistPdf }
-    ];
+    let generatedSubfolderId = null;
+    if (user.driveFolder?.folderId) {
+      try {
+        generatedSubfolderId = await createSubfolder(user.driveFolder.folderId, 'generated');
+      } catch (err) {
+        console.log('⚠️ Could not create Drive subfolder, saving locally only');
+      }
+    }
 
+    const signatureBuffer = getSignatureBuffer(user);
     const generatedDocs = {};
 
-    for (const { key, fileName, generator } of pdfGenerators) {
+    // Convert Mongoose document to plain object
+    const userObj = user.toObject ? user.toObject() : user;
+
+    // Prepare candidate data by merging profileData with top-level fields
+    // Extract joiningFormData (it might be directly on userObj or inside profileData)
+    const jf = userObj.profileData?.joiningFormData || userObj.joiningFormData || {};
+
+    // Construct derived profile data similar to how it's done in CandidateDashboard.jsx
+    const derivedProfileData = {
+      ...userObj.profileData,
+      ...jf, // Spread ALL joining form data to catch loose fields (e.g. previous employment)
+      // Explicitly include form data objects for Checklist generator (which checks profileData)
+      form11Data: userObj.profileData?.form11Data || userObj.form11Data,
+      formFData: userObj.profileData?.formFData || userObj.formFData,
+      pfNominationData: userObj.profileData?.form2Data || userObj.pfNominationData,
+      medicalInsuranceData: userObj.profileData?.medicalInsuranceData || userObj.medicalInsuranceData,
+      insuranceData: userObj.profileData?.medicalInsuranceData || userObj.medicalInsuranceData, // Alias
+      selfDeclarationData: userObj.profileData?.selfDeclarationData || userObj.selfDeclarationData,
+      joiningFormData: jf,
+
+      fullName: jf.firstName ? `${jf.firstName} ${jf.lastName || ''}`.trim() : (userObj.name || ''),
+      dateOfBirth: jf.dob,
+      fatherName: jf.fatherName,
+      motherName: jf.motherName,
+      spouseName: jf.spouseName,
+      gender: jf.gender,
+      bloodGroup: jf.bloodGroup,
+      maritalStatus: jf.maritalStatus,
+      nationality: jf.nationality,
+      religion: jf.religion,
+      mobileNumber: jf.phone || userObj.mobile,
+      email: jf.emailId || userObj.email,
+      currentAddress: jf.presentAddress,
+      currentCity: jf.presentCity,
+      pincode: jf.presentPincode,
+      permanentAddress: jf.permanentAddress,
+      permanentCity: jf.permanentCity,
+      permanentState: jf.permanentState,
+      aadhaarNumber: jf.aadhaarNumber,
+      panNumber: jf.panNumber,
+      bankName: jf.bankName,
+      accountNumber: jf.bankAccountNumber,
+      ifscCode: jf.bankIfsc,
+      accountHolderName: jf.firstName ? `${jf.firstName} ${jf.lastName || ''}`.trim() : '',
+      uanNumber: jf.uanNumber,
+      emergencyContactName: jf.emergencyContactName,
+      emergencyContactRelation: jf.emergencyContactRelation,
+      emergencyContactNumber: jf.emergencyContactPhone,
+      department: jf.department,
+      profession: jf.designation,
+      dateOfJoining: jf.dateOfJoining || new Date().toISOString().split('T')[0]
+    };
+
+    // Prepare candidate data with the derived profile data
+    const candidateData = {
+      ...userObj,
+      ...derivedProfileData, // Spread derived data to top level for Adobe generators!
+      profileData: derivedProfileData, // Keep it nested for client-side generators
+      // Ensure form-specific data is accessible at top level
+      form11Data: userObj.profileData?.form11Data || userObj.form11Data,
+      formFData: userObj.profileData?.formFData || userObj.formFData,
+      form2Data: userObj.profileData?.form2Data || userObj.form2Data,
+      pfNominationData: userObj.profileData?.form2Data || userObj.pfNominationData,
+      // Ensure nominees are accessible
+      epfNominees: userObj.profileData?.epfNominees || userObj.profileData?.form2EPFNominees || userObj.epfNominees,
+      epsFamilyNominees: userObj.profileData?.epsNominees || userObj.profileData?.form2FamilyMembers || userObj.profileData?.familyMembers || userObj.epsFamilyNominees,
+      nominees: user.profileData?.formFNominees || user.nominees || derivedProfileData.nominees,
+      // Fix signature for client-side generators which expect a string
+      signature: userObj.signature?.signatureImage || userObj.signature
+    };
+
+    console.log('🔍 DEBUG: Candidate Data for Form Generation:');
+    console.log('Name:', candidateData.name);
+    console.log('Profile Data Keys:', Object.keys(candidateData.profileData || {}));
+    console.log('Form 11 Data:', JSON.stringify(candidateData.form11Data || {}, null, 2));
+    console.log('Joining Form Data:', JSON.stringify(candidateData.joiningFormData || {}, null, 2));
+    console.log('Education Details:', JSON.stringify(candidateData.educationDetails || {}, null, 2));
+
+    // Generate the 3 Adobe PDF forms (Form 11, Form F, Form 2/PF Nomination)
+    const adobeForms = [
+      { key: 'form11', fileName: 'Form_11_Filled.pdf', generator: fillForm11Adobe },
+      { key: 'formF', fileName: 'Form_F_Filled.pdf', generator: fillFormFAdobe },
+      { key: 'pfNomination', fileName: 'PF_Nomination_Form_2_Filled.pdf', generator: fillForm2Adobe }
+    ];
+
+    for (const { key, fileName, generator } of adobeForms) {
       try {
-        const pdfBuffer = await generatePdfBuffer(generator, user);
-        const uploadResult = await uploadOrReplacePdf(generatedSubfolder.folderId, pdfBuffer, fileName);
-        
+        console.log(`📝 Generating ${fileName} with Adobe PDF Services...`);
+        const pdfBuffer = await generator(candidateData, signatureBuffer);
+
+        // Save to temp file
+        const tmpDir = os.tmpdir();
+        const tmpFilePath = path.join(tmpDir, `${Date.now()}_${fileName}`);
+        fs.writeFileSync(tmpFilePath, pdfBuffer);
+
+        let fileId, viewLink, downloadLink;
+
+        // Try to upload to Drive first
+        if (generatedSubfolderId) {
+          try {
+            const uploadResult = await uploadOrReplacePdf(generatedSubfolderId, tmpFilePath, fileName);
+
+            if (typeof uploadResult === 'string') {
+              fileId = uploadResult;
+              viewLink = `https://drive.google.com/file/d/${uploadResult}/view`;
+              downloadLink = `https://drive.google.com/uc?export=download&id=${uploadResult}`;
+            } else {
+              fileId = uploadResult.fileId;
+              viewLink = uploadResult.viewLink;
+              downloadLink = uploadResult.downloadLink;
+            }
+
+            console.log(`✅ Uploaded ${fileName} to Drive`);
+          } catch (driveError) {
+            console.log(`⚠️ Drive upload failed for ${fileName}: ${driveError.message}`);
+          }
+        }
+
+        // Save locally (always, as backup or primary)
+        if (!fileId) {
+          const candidateName = (user.profileData?.fullName || user.name).replace(/[^a-zA-Z0-9]/g, '_');
+          const localDir = path.join(process.cwd(), 'uploads', candidateName, 'generated');
+
+          if (!fs.existsSync(localDir)) {
+            fs.mkdirSync(localDir, { recursive: true });
+          }
+
+          const localFilePath = path.join(localDir, fileName);
+          fs.copyFileSync(tmpFilePath, localFilePath);
+
+          const relativePath = `/uploads/${candidateName}/generated/${fileName}`;
+          viewLink = relativePath;
+          downloadLink = relativePath;
+
+          console.log(`✅ Saved ${fileName} locally`);
+        }
+
+        // Delete temp file
+        fs.unlinkSync(tmpFilePath);
+
         generatedDocs[key] = {
-          fileId: uploadResult.fileId,
-          fileName: uploadResult.fileName,
-          viewLink: uploadResult.viewLink,
-          downloadLink: uploadResult.downloadLink,
+          fileId: fileId || null,
+          fileName: fileName,
+          viewLink: viewLink,
+          downloadLink: downloadLink,
           generatedAt: new Date()
         };
+
+      } catch (error) {
+        console.error(`❌ Error generating ${fileName}:`, error.message);
+      }
+    }
+
+    // Generate the 5 client-side forms (same as candidate dashboard!)
+    const clientForms = [
+      { key: 'joiningForm', fileName: 'Joining_Form.pdf', generator: generateJoiningFormPDF },
+      { key: 'medicalForm', fileName: 'Medical_Insurance_Form.pdf', generator: generateMedicalInsuranceFormPDF },
+      { key: 'selfDeclaration', fileName: 'Self_Declaration.pdf', generator: generateSelfDeclarationFormPDF },
+      { key: 'policyAcknowledgment', fileName: 'Policy_Acknowledgment.pdf', generator: generatePolicyAcknowledgment },
+      { key: 'checklist', fileName: 'Document_Checklist.pdf', generator: generateChecklistPDF }
+    ];
+
+    for (const { key, fileName, generator } of clientForms) {
+      try {
+        console.log(`📝 Generating ${fileName} (same as candidate dashboard)...`);
+
+        // Generate PDF using jsPDF (returns jsPDF doc object)
+        const doc = await generator(candidateData);
+        if (!doc) throw new Error(`${fileName}: Generator returned null`);
+
+        // Convert jsPDF doc to buffer
+        // Note: 'arraybuffer' output from jsPDF, then Buffer.from
+        const pdfArrayBuffer = doc.output('arraybuffer');
+        const pdfBuffer = Buffer.from(pdfArrayBuffer);
+
+        const candidateName = (user.profileData?.fullName || user.name).replace(/[^a-zA-Z0-9]/g, '_');
+        const localDir = path.join(process.cwd(), 'uploads', candidateName, 'generated');
+        if (!fs.existsSync(localDir)) {
+          fs.mkdirSync(localDir, { recursive: true });
+        }
         
-        console.log(`✅ Generated and uploaded: ${fileName}`);
+        const localFilePath = path.join(localDir, fileName);
+        fs.writeFileSync(localFilePath, pdfBuffer);
+
+        let fileId = null;
+        let viewLink = `/uploads/${candidateName}/generated/${fileName}`;
+        let downloadLink = viewLink;
+
+        // Try Drive Upload
+        if (generatedSubfolderId) {
+          try {
+             // Use our helper which handles replace/upload
+             const driveResult = await uploadOrReplacePdf(generatedSubfolderId, localFilePath, fileName);
+             if (typeof driveResult === 'object') {
+                fileId = driveResult.fileId;
+                viewLink = driveResult.viewLink;
+                downloadLink = driveResult.downloadLink;
+             } else {
+                // Fallback for older return type
+                fileId = driveResult;
+                viewLink = `https://drive.google.com/file/d/${fileId}/view`;
+             }
+             console.log(`✅ Uploaded ${fileName} to Drive: ${fileId}`);
+          } catch (driveErr) {
+             console.error(`⚠️ Failed to upload ${fileName} to Drive:`, driveErr.message);
+          }
+        }
+
+        generatedDocs[key] = {
+          fileId: fileId,
+          fileName: fileName,
+          viewLink: viewLink,
+          downloadLink: downloadLink,
+          generatedAt: new Date()
+        };
+
+        console.log(`✅ Generated & Saved ${fileName}`);
+
       } catch (error) {
         console.error(`❌ Error generating ${fileName}:`, error.message);
       }
     }
 
     return {
-      generatedSubfolderId: generatedSubfolder.folderId,
+      generatedSubfolderId: generatedSubfolderId,
       generatedDocuments: generatedDocs
     };
   } catch (error) {

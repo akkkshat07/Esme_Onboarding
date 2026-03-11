@@ -1,13 +1,7 @@
 import { google } from 'googleapis';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const CREDENTIALS_PATH = path.join(__dirname, '../credentials.json');
-
-
-const WHITELIST_SHEET_ID = '1pAWtwA5zUHcpjd4OvhzeV6UsXn4__Q19ZcsTVb4FknE';
-
+// Use BGV Sheet ID from .env or fallback to default
+const WHITELIST_SHEET_ID = process.env.GOOGLE_SHEET_BGV || '1pAWtwA5zUHcpjd4OvhzeV6UsXn4__Q19ZcsTVb4FknE';
 
 const SHEET_NAMES = [
   'Pre & Onboarding adherence checklist & Tracker',
@@ -18,8 +12,23 @@ const SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly'];
 
 async function getAuthClient() {
   try {
+    // Use credentials from .env file (Service Account)
+    const projectId = process.env.GOOGLE_PROJECT_ID;
+    const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
+    const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+
+    if (!projectId || !clientEmail || !privateKey) {
+      console.error('❌ Missing Google Service Account credentials in .env');
+      return null;
+    }
+
     const auth = new google.auth.GoogleAuth({
-      keyFile: CREDENTIALS_PATH,
+      credentials: {
+        type: 'service_account',
+        project_id: projectId,
+        client_email: clientEmail,
+        private_key: privateKey.replace(/\\n/g, '\n'),
+      },
       scopes: SCOPES,
     });
     return await auth.getClient();
@@ -179,4 +188,16 @@ export async function getWhitelistStats() {
     lastRefresh: new Date(lastFetchTime).toISOString(),
     sheets: SHEET_NAMES
   };
+}
+
+export async function getWhitelistCandidates() {
+  const whitelist = await fetchWhitelistData();
+  if (!whitelist) return [];
+  
+  return whitelist.map(candidate => ({
+    name: candidate.name,
+    email: candidate.email,
+    mobile: candidate.phone,
+    sheet: candidate.sheet
+  }));
 }

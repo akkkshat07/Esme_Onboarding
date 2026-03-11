@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = '/api';
 export const uploadPdfToDrive = async (email, pdfBytes, formName, customFileName = null) => {
   try {
     let base64Data;
@@ -29,8 +29,7 @@ export const uploadPdfToDrive = async (email, pdfBytes, formName, customFileName
     }
     return {
       success: true,
-      document: result.document,
-      folderLink: result.folderLink
+      document: result.document
     };
   } catch (error) {
     console.error('Drive upload error:', error);

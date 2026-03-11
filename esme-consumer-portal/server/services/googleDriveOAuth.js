@@ -54,18 +54,18 @@ export const getAuthUrl = () => {
 export const handleAuthCallback = async (code) => {
   const oauth2Client = getOAuth2Client();
   const { tokens } = await oauth2Client.getToken(code);
-  
+
 
   fs.writeFileSync(TOKEN_PATH, JSON.stringify(tokens, null, 2));
   console.log('✅ Google Drive tokens saved successfully');
-  
+
   return tokens;
 };
 
 
 const getDriveClient = async () => {
   const oauth2Client = getOAuth2Client();
-  
+
   if (!fs.existsSync(TOKEN_PATH)) {
     throw new Error('Google Drive not connected. Please authorize first at /api/auth/google');
   }
@@ -105,8 +105,7 @@ export const createCandidateFolder = async (candidateName, position, city) => {
       console.log(`📁 Folder already exists: ${folderName}`);
       return {
         folderId: existingFolders.data.files[0].id,
-        folderName,
-        folderLink: existingFolders.data.files[0].webViewLink
+        folderName
       };
     }
 
@@ -124,8 +123,7 @@ export const createCandidateFolder = async (candidateName, position, city) => {
 
     return {
       folderId: folder.data.id,
-      folderName,
-      folderLink: folder.data.webViewLink
+      folderName
     };
   } catch (error) {
     console.error('❌ Error creating folder:', error.message);
@@ -213,7 +211,7 @@ export const uploadPdfBufferToDrive = async (folderId, pdfBuffer, fileName) => {
   try {
     const drive = await getDriveClient();
     const { Readable } = await import('stream');
-    
+
     // Convert buffer to readable stream
     const bufferStream = new Readable();
     bufferStream.push(pdfBuffer);
@@ -262,7 +260,7 @@ export const uploadPdfBufferToDrive = async (folderId, pdfBuffer, fileName) => {
 export const deleteFileByName = async (folderId, fileName) => {
   try {
     const drive = await getDriveClient();
-    
+
     // Find file by name
     const response = await drive.files.list({
       q: `'${folderId}' in parents and name='${fileName}' and trashed=false`,
@@ -288,7 +286,7 @@ export const uploadOrReplacePdf = async (folderId, pdfBuffer, fileName) => {
   try {
     // First try to delete any existing file with same name
     await deleteFileByName(folderId, fileName);
-    
+
     // Then upload the new file
     return await uploadPdfBufferToDrive(folderId, pdfBuffer, fileName);
   } catch (error) {
@@ -306,7 +304,7 @@ export const getDriveStatus = async () => {
 
     const drive = await getDriveClient();
     const about = await drive.about.get({ fields: 'user' });
-    
+
     return {
       connected: true,
       user: about.data.user?.emailAddress,
@@ -330,8 +328,7 @@ export const createSubfolder = async (parentFolderId, subfolderName) => {
       console.log(`📁 Subfolder already exists: ${subfolderName}`);
       return {
         folderId: existingFolders.data.files[0].id,
-        folderName: subfolderName,
-        folderLink: existingFolders.data.files[0].webViewLink
+        folderName: subfolderName
       };
     }
 
@@ -348,8 +345,7 @@ export const createSubfolder = async (parentFolderId, subfolderName) => {
 
     return {
       folderId: folder.data.id,
-      folderName: subfolderName,
-      folderLink: folder.data.webViewLink
+      folderName: subfolderName
     };
   } catch (error) {
     console.error('❌ Error creating subfolder:', error.message);
@@ -360,7 +356,7 @@ export const createSubfolder = async (parentFolderId, subfolderName) => {
 export const downloadFileFromDrive = async (fileId) => {
   try {
     const drive = await getDriveClient();
-    
+
     const response = await drive.files.get(
       { fileId, alt: 'media' },
       { responseType: 'arraybuffer' }

@@ -1,6 +1,8 @@
-import { uploadPdfToDrive } from './driveUpload';
+import { ESME_LOGO_BASE64 } from '../constants/esmeLogoBase64.js';
+import { AADHAAR_IMAGE } from '../constants/aadhaarImage.js';
+
 export const generateJoiningFormPDF = async (candidate) => {
-  const jsPDF = (await import('jspdf')).default;
+  const { jsPDF } = await import('jspdf');
   const doc = new jsPDF('p', 'mm', 'a4');
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -11,23 +13,44 @@ export const generateJoiningFormPDF = async (candidate) => {
   const darkColor = [30, 41, 59];
   const grayColor = [100, 116, 139];
   const addHeader = () => {
-    doc.setFillColor(248, 250, 252);
-    doc.rect(0, 0, pageWidth, 35, 'F');
-    doc.setFontSize(18);
-    doc.setTextColor(...primaryColor);
-    doc.setFont(undefined, 'bold');
-    doc.text('ESME CONSUMER (P) LTD.', pageWidth / 2, 15, { align: 'center' });
+    const logoY = 10;
+    try {
+      doc.addImage(ESME_LOGO_BASE64, 'PNG', margin, logoY, 40, 15, undefined, 'FAST');
+    } catch (e) { console.error(e); }
+
+    // Title (Centered)
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(14);
-    doc.setTextColor(...darkColor);
-    doc.text('EMPLOYEE JOINING FORM', pageWidth / 2, 24, { align: 'center' });
-    doc.setFontSize(8);
-    doc.setTextColor(...grayColor);
-    doc.setFont(undefined, 'normal');
-    doc.text('Date: ' + new Date().toLocaleDateString('en-IN'), pageWidth - margin, 30, { align: 'right' });
-    doc.setDrawColor(...primaryColor);
-    doc.setLineWidth(0.8);
-    doc.line(margin, 36, pageWidth - margin, 36);
-    yPosition = 42;
+    doc.setTextColor(30, 41, 59);
+    doc.text('EMPLOYEE JOINING FORM', pageWidth / 2, logoY + 10, { align: 'center' });
+
+    // Profile Photo (Right)
+    const rawProfilePic = candidate.profileImage || AADHAAR_IMAGE;
+    if (rawProfilePic) {
+      try {
+        let imgForPdf = rawProfilePic;
+        // Check for Node.js environment to convert Base64 string to Buffer/Uint8Array
+        // jsPDF in Node requires binary data for Data URIs to avoid file system read errors
+        if (typeof Buffer !== 'undefined' && rawProfilePic.startsWith('data:image')) {
+          const parts = rawProfilePic.split(',');
+          if (parts[1]) {
+            imgForPdf = new Uint8Array(Buffer.from(parts[1], 'base64'));
+          }
+        }
+        // Detect format
+        const isPng = rawProfilePic.includes('image/png');
+        const format = isPng ? 'PNG' : 'JPEG';
+        doc.addImage(imgForPdf, format, pageWidth - margin - 25, logoY, 25, 30);
+      } catch (e) { console.error('Error adding profile photo:', e); }
+    }
+
+    // Line
+    doc.setDrawColor(0, 128, 128);
+    doc.setLineWidth(0.5);
+    const lineY = logoY + 32;
+    doc.line(margin, lineY, pageWidth - margin, lineY);
+
+    yPosition = lineY + 8;
   };
   const addSectionHeader = (title) => {
     checkPageBreak(12);
@@ -162,6 +185,22 @@ export const generateJoiningFormPDF = async (candidate) => {
   const sigBoxHeight = 20;
   doc.setDrawColor(...grayColor);
   doc.setLineWidth(0.3);
+
+  // Signature Box
+  if (candidate.signature) {
+    try {
+      // Auto-detect format from data URI
+      doc.addImage(candidate.signature, margin + 5, yPosition + 2, sigBoxWidth - 10, sigBoxHeight - 4);
+    } catch (error) {
+      console.warn('Auto-detect signature format failed, retrying as PNG:', error);
+      try {
+        doc.addImage(candidate.signature, 'PNG', margin + 5, yPosition + 2, sigBoxWidth - 10, sigBoxHeight - 4);
+      } catch (e2) {
+        console.error('Error adding signature:', e2);
+      }
+    }
+  }
+
   doc.rect(margin, yPosition, sigBoxWidth, sigBoxHeight);
   doc.setFontSize(8);
   doc.setTextColor(...grayColor);
@@ -187,6 +226,8 @@ export const downloadJoiningFormPDF = async (candidate) => {
   doc.save(fileName);
   if (candidate.email) {
     try {
+      // Try to import driveUpload (only available client-side)
+      const { uploadPdfToDrive } = await import('./driveUpload.js');
       const pdfBlob = doc.output('blob');
       const arrayBuffer = await pdfBlob.arrayBuffer();
       const pdfBytes = new Uint8Array(arrayBuffer);
